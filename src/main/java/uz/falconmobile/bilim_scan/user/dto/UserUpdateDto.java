@@ -4,9 +4,7 @@ import lombok.Data;
 import uz.falconmobile.bilim_scan.user.model.Role;
 
 @Data
-public class UserCreateDto {
-
-    private String username;
+public class UserUpdateDto {
     private String password;
     private Role role;
     private String firstName;

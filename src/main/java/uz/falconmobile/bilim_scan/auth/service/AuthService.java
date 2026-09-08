@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import uz.falconmobile.bilim_scan.auth.dto.LoginRequestDto;
 import uz.falconmobile.bilim_scan.auth.dto.TokenResponseDto;
 import uz.falconmobile.bilim_scan.security.JwtUtil;
+import uz.falconmobile.bilim_scan.user.dto.UserResponseDto;
+import uz.falconmobile.bilim_scan.user.model.Role;
 import uz.falconmobile.bilim_scan.user.model.User;
 import uz.falconmobile.bilim_scan.user.repository.UserRepository;
 
@@ -25,7 +27,31 @@ public class AuthService {
             throw new RuntimeException("Login yoki parol noto'g'ri!");
         }
 
+//        user.getId(),
+//                user.getUsername(),
+//                user.getRole(),
+//                user.getFirstName(),
+//                user.getLastName(),
+//                user.getPatronymic(),
+//                user.getProfileImageUrl(),
+//                user.getBosqichId(),
+//                user.getGuruhId(),
+//                user.getKafedraId(),
+//                user.getFanId()
+        UserResponseDto userResponse = UserResponseDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .role(user.getRole())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .patronymic(user.getPatronymic())
+                .profileImageUrl(user.getProfileImageUrl())
+                .bosqichId(user.getBosqichId())
+                .guruhId(user.getGuruhId())
+                .kafedraId(user.getKafedraId())
+                .fanId(user.getFanId())
+                .build();
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
-        return new TokenResponseDto(token, "Bearer");
+        return new TokenResponseDto(token, userResponse);
     }
 }

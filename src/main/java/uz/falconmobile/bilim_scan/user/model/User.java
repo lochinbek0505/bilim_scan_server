@@ -12,4 +12,12 @@ public class User {
     private String username;
     private String password;
     private Role role;
+    private String firstName;
+    private String lastName;
+    private String patronymic;
+    private String profileImageUrl;
+    private String bosqichId;
+    private String guruhId;
+    private String kafedraId;
+    private String fanId;
 }
