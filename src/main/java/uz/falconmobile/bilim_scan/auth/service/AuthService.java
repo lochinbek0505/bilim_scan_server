@@ -27,17 +27,7 @@ public class AuthService {
             throw new RuntimeException("Login yoki parol noto'g'ri!");
         }
 
-//        user.getId(),
-//                user.getUsername(),
-//                user.getRole(),
-//                user.getFirstName(),
-//                user.getLastName(),
-//                user.getPatronymic(),
-//                user.getProfileImageUrl(),
-//                user.getBosqichId(),
-//                user.getGuruhId(),
-//                user.getKafedraId(),
-//                user.getFanId()
+
         UserResponseDto userResponse = UserResponseDto.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -46,10 +36,10 @@ public class AuthService {
                 .lastName(user.getLastName())
                 .patronymic(user.getPatronymic())
                 .profileImageUrl(user.getProfileImageUrl())
-                .bosqichId(user.getBosqichId())
-                .guruhId(user.getGuruhId())
-                .kafedraId(user.getKafedraId())
-                .fanId(user.getFanId())
+                .bosqich(user.getBosqichId())
+                .guruh(user.getGuruhId())
+                .kafedra(user.getKafedraId())
+                .fan(user.getFanId())
                 .build();
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
         return new TokenResponseDto(token, userResponse);

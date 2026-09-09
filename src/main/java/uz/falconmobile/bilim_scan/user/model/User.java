@@ -2,6 +2,7 @@ package uz.falconmobile.bilim_scan.user.model;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import uz.falconmobile.bilim_scan.catalog.dto.CatalogItemResponseDto;
 
 
 @Data
@@ -16,8 +17,8 @@ public class User {
     private String lastName;
     private String patronymic;
     private String profileImageUrl;
-    private String bosqichId;
-    private String guruhId;
-    private String kafedraId;
-    private String fanId;
+    private CatalogItemResponseDto bosqichId;
+    private CatalogItemResponseDto guruhId;
+    private CatalogItemResponseDto kafedraId;
+    private CatalogItemResponseDto fanId;
 }

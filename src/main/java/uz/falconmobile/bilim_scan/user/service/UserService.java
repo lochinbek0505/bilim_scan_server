@@ -3,6 +3,11 @@ package uz.falconmobile.bilim_scan.user.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import uz.falconmobile.bilim_scan.catalog.dto.CatalogItemResponseDto;
+import uz.falconmobile.bilim_scan.catalog.model.Bosqich;
+import uz.falconmobile.bilim_scan.catalog.model.Fan;
+import uz.falconmobile.bilim_scan.catalog.model.Guruh;
+import uz.falconmobile.bilim_scan.catalog.model.Kafedra;
 import uz.falconmobile.bilim_scan.catalog.repository.BosqichRepository;
 import uz.falconmobile.bilim_scan.catalog.repository.FanRepository;
 import uz.falconmobile.bilim_scan.catalog.repository.GuruhRepository;
@@ -66,12 +71,16 @@ public class UserService {
         User user = findByIdOrThrow(id);
         Role role = requireRole(dto.getRole());
 
+
         user.setRole(role);
         user.setFirstName(requireNonBlank(dto.getFirstName(), "Ism bo'sh bo'lishi mumkin emas"));
         user.setLastName(requireNonBlank(dto.getLastName(), "Familiya bo'sh bo'lishi mumkin emas"));
         user.setPatronymic(requireNonBlank(dto.getPatronymic(), "Sharif bo'sh bo'lishi mumkin emas"));
         user.setProfileImageUrl(requireNonBlank(dto.getProfileImageUrl(), "Profile rasmi linki bo'sh bo'lishi mumkin emas"));
 
+
+
+        // Parolni yangilash
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
@@ -98,7 +107,7 @@ public class UserService {
     }
 
     private void applyRoleSpecificFields(User user, Role role, String bosqichId, String guruhId, String kafedraId, String fanId) {
-        if (role == Role.USER) {
+        if (role == Role.USER || role == Role.ADMIN) {
             String normalizedBosqichId = requireNonBlank(bosqichId, "USER uchun bosqich majburiy");
             String normalizedGuruhId = requireNonBlank(guruhId, "USER uchun guruh majburiy");
             if (!bosqichRepository.existsById(normalizedBosqichId)) {
@@ -107,14 +116,27 @@ public class UserService {
             if (!guruhRepository.existsById(normalizedGuruhId)) {
                 throw new RuntimeException("Guruh topilmadi: " + normalizedGuruhId);
             }
-            user.setBosqichId(normalizedBosqichId);
-            user.setGuruhId(normalizedGuruhId);
+            Bosqich bosqich = bosqichRepository.findById(normalizedBosqichId)
+                    .orElseThrow(() -> new RuntimeException("Bosqich topilmadi: " + normalizedBosqichId));
+            CatalogItemResponseDto bosqichDto = CatalogItemResponseDto.builder()
+                    .id(bosqich.getId())
+                    .name(bosqich.getName())
+                    .build();
+
+            Guruh guruh = guruhRepository.findById(normalizedGuruhId)
+                    .orElseThrow(() -> new RuntimeException("Guruh topilmadi: " + normalizedGuruhId));
+            CatalogItemResponseDto guruhDto = CatalogItemResponseDto.builder()
+                    .id(guruh.getId())
+                    .name(guruh.getName())
+                    .build();
+            user.setBosqichId(bosqichDto);
+            user.setGuruhId(guruhDto);
             user.setKafedraId(null);
             user.setFanId(null);
             return;
         }
 
-        if (role == Role.TEACHER) {
+        if (role == Role.TEACHER || role == Role.ADMIN) {
             String normalizedKafedraId = requireNonBlank(kafedraId, "TEACHER uchun kafedra majburiy");
             String normalizedFanId = requireNonBlank(fanId, "TEACHER uchun fan majburiy");
             if (!kafedraRepository.existsById(normalizedKafedraId)) {
@@ -123,8 +145,24 @@ public class UserService {
             if (!fanRepository.existsById(normalizedFanId)) {
                 throw new RuntimeException("Fan topilmadi: " + normalizedFanId);
             }
-            user.setKafedraId(normalizedKafedraId);
-            user.setFanId(normalizedFanId);
+
+            Kafedra kafedra = kafedraRepository.findById(normalizedKafedraId)
+                    .orElseThrow(() -> new RuntimeException("Kafedra topilmadi: " + normalizedKafedraId));
+            CatalogItemResponseDto kafedraDto = CatalogItemResponseDto.builder()
+                    .id(kafedra.getId())
+                    .name(kafedra.getName())
+                    .build();
+
+            Fan fan = fanRepository.findById(normalizedFanId)
+                    .orElseThrow(() -> new RuntimeException("Fan topilmadi: " + normalizedFanId));
+            CatalogItemResponseDto fanDto = CatalogItemResponseDto.builder()
+                    .id(fan.getId())
+                    .name(fan.getName())
+                    .build();
+
+
+            user.setKafedraId(kafedraDto);
+            user.setFanId(fanDto);
             user.setBosqichId(null);
             user.setGuruhId(null);
             return;
@@ -152,10 +190,10 @@ public class UserService {
                 .lastName(user.getLastName())
                 .patronymic(user.getPatronymic())
                 .profileImageUrl(user.getProfileImageUrl())
-                .bosqichId(user.getBosqichId())
-                .guruhId(user.getGuruhId())
-                .kafedraId(user.getKafedraId())
-                .fanId(user.getFanId())
+                .bosqich(user.getBosqichId())
+                .guruh(user.getGuruhId())
+                .kafedra(user.getKafedraId())
+                .fan(user.getFanId())
                 .build();
         return dto;
     }

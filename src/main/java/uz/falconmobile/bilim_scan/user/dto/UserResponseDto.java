@@ -2,6 +2,7 @@ package uz.falconmobile.bilim_scan.user.dto;
 
 import lombok.Builder;
 import lombok.Data;
+import uz.falconmobile.bilim_scan.catalog.dto.CatalogItemResponseDto;
 import uz.falconmobile.bilim_scan.user.model.Role;
 
 @Builder
@@ -14,8 +15,8 @@ public class UserResponseDto {
     private String lastName;
     private String patronymic;
     private String profileImageUrl;
-    private String bosqichId;
-    private String guruhId;
-    private String kafedraId;
-    private String fanId;
+    private CatalogItemResponseDto bosqich;
+    private CatalogItemResponseDto guruh;
+    private CatalogItemResponseDto kafedra;
+    private CatalogItemResponseDto fan;
 }
