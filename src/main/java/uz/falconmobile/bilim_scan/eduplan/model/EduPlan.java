@@ -19,5 +19,4 @@ public class EduPlan {
     private Fan fan;
     private Kafedra kafedra;
     private String oquvYili;
-    private String oquvOyi;
 }

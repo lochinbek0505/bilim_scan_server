@@ -8,5 +8,4 @@ public class EduPlanRequestDto {
     private String fanId;
     private String kafedraId;
     private String oquvYili;
-    private String oquvOyi;
 }

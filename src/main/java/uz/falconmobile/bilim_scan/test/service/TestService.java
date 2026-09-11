@@ -288,7 +288,6 @@ public class TestService {
                 .fan(fanDto)
                 .kafedra(kafedraDto)
                 .oquvYili(plan.getOquvYili())
-                .oquvOyi(plan.getOquvOyi())
                 .build();
     }
 

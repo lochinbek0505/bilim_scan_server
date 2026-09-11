@@ -45,7 +45,6 @@ public class EduPlanService {
         Instant now = Instant.now();
         plan.setName(requireNonBlank(dto.getName(), "Plan nomi bo'sh bo'lishi mumkin emas"));
         plan.setOquvYili(requireNonBlank(dto.getOquvYili(), "O'quv yili bo'sh bo'lishi mumkin emas"));
-        plan.setOquvOyi(requireNonBlank(dto.getOquvOyi(), "O'quv oyi bo'sh bo'lishi mumkin emas"));
         plan.setCreateAt(now);
         plan.setUpdateAt(now);
 
@@ -74,7 +73,6 @@ public class EduPlanService {
         EduPlan plan = findPlanByIdOrThrow(planId);
         plan.setName(requireNonBlank(dto.getName(), "Plan nomi bo'sh bo'lishi mumkin emas"));
         plan.setOquvYili(requireNonBlank(dto.getOquvYili(), "O'quv yili bo'sh bo'lishi mumkin emas"));
-        plan.setOquvOyi(requireNonBlank(dto.getOquvOyi(), "O'quv oyi bo'sh bo'lishi mumkin emas"));
         plan.setUpdateAt(Instant.now());
 
         if (kafedraRepository.existsById(dto.getKafedraId()) || dto.getKafedraId() == null || dto.getKafedraId().isBlank()) {
@@ -209,7 +207,6 @@ public class EduPlanService {
                 .fan(fanDto)
                 .kafedra(kafedraDto)
                 .oquvYili(plan.getOquvYili())
-                .oquvOyi(plan.getOquvOyi())
                 .topics(topics)
                 .build();
     }
