@@ -1,0 +1,50 @@
+package uz.falconmobile.bilim_scan.exam.controller;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+import uz.falconmobile.bilim_scan.exam.dto.ExamCreateDto;
+import uz.falconmobile.bilim_scan.exam.dto.StudentAnswerSubmitDto;
+import uz.falconmobile.bilim_scan.exam.dto.StudentExamStartResponseDto;
+import uz.falconmobile.bilim_scan.exam.dto.StudentExamSubmitResponseDto;
+import uz.falconmobile.bilim_scan.exam.model.ExamSession;
+import uz.falconmobile.bilim_scan.exam.model.StudentExam;
+import uz.falconmobile.bilim_scan.exam.service.ExamService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/exams")
+@RequiredArgsConstructor
+public class ExamController {
+
+    private final ExamService examService;
+
+    // Yaratilgan barcha imtihonlar ro'yxatini olish (Admin yoki O'qituvchi uchun)
+    @GetMapping
+    public List<ExamSession> getAllExamSessions() {
+        return examService.getAllExamSessions();
+    }
+
+    // O'qituvchi yoki Admin imtihon ochishi uchun
+    @PostMapping("/create")
+    public ExamSession createExam(@RequestBody ExamCreateDto dto) {
+        return examService.createExam(dto);
+    }
+
+    // Talaba o'ziga biriktirilgan imtihonni boshlashi (To'liq savollar qaytadi)
+    @PostMapping("/{examSessionId}/start/{studentId}")
+    public StudentExamStartResponseDto startExam(
+            @PathVariable String examSessionId,
+            @PathVariable String studentId) {
+        // Savollar soni va urinishlar soni endi imtihon (ExamSession) ichidan olinadi
+        return examService.startStudentExam(examSessionId, studentId);
+    }
+
+    // Talaba imtihonni yakunlab, javoblarni yuborishi
+    @PostMapping("/student-exam/{studentExamId}/submit")
+    public StudentExamSubmitResponseDto submitExam(
+            @PathVariable String studentExamId,
+            @RequestBody StudentAnswerSubmitDto dto) {
+        return examService.submitExam(studentExamId, dto);
+    }
+}
