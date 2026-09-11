@@ -107,7 +107,7 @@ public class UserService {
     }
 
     private void applyRoleSpecificFields(User user, Role role, String bosqichId, String guruhId, String kafedraId, String fanId) {
-        if (role == Role.USER || role == Role.ADMIN) {
+        if (role == Role.USER) {
             String normalizedBosqichId = requireNonBlank(bosqichId, "USER uchun bosqich majburiy");
             String normalizedGuruhId = requireNonBlank(guruhId, "USER uchun guruh majburiy");
             if (!bosqichRepository.existsById(normalizedBosqichId)) {
@@ -136,7 +136,7 @@ public class UserService {
             return;
         }
 
-        if (role == Role.TEACHER || role == Role.ADMIN) {
+        if (role == Role.TEACHER ) {
             String normalizedKafedraId = requireNonBlank(kafedraId, "TEACHER uchun kafedra majburiy");
             String normalizedFanId = requireNonBlank(fanId, "TEACHER uchun fan majburiy");
             if (!kafedraRepository.existsById(normalizedKafedraId)) {
