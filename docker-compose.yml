@@ -5,11 +5,13 @@ services:
     ports:
       - "27018:27017"
     environment:
+      MONGO_INITDB_ROOT_USERNAME: dbadmin
+      MONGO_INITDB_ROOT_PASSWORD: pghrH0UcQKFbhB5sQagm3xNVPMsqV1qH
       MONGO_INITDB_DATABASE: bilim_scan
     volumes:
       - mongo-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "mongodb://localhost:27017/admin", "--eval", "db.runCommand({ ping: 1 }).ok"]
+      test: ["CMD", "mongosh", "-u", "dbadmin", "-p", "pghrH0UcQKFbhB5sQagm3xNVPMsqV1qH", "--authenticationDatabase", "admin", "--quiet", "mongodb://localhost:27017/admin", "--eval", "db.runCommand({ ping: 1 }).ok"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,10 +26,11 @@ services:
       mongodb:
         condition: service_healthy
     ports:
-      - "8080:8080"
+      - "4257:4257"
     environment:
-      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bilim_scan
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
+      SPRING_DATA_MONGODB_URI: mongodb://dbadmin:pghrH0UcQKFbhB5sQagm3xNVPMsqV1qH@mongodb:27018/bilim_scan?authSource=admin
+      # Xatolik shu yerda edi, "?oW0..." o'rniga "-oW0..." qilingdi
+      JWT_SECRET: ${JWT_SECRET:-oW06XK9Gb4ZhWLgGacqKAZyhPKV0Gatf}
       JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-10800000}
       BOOTSTRAP_ADMIN_ENABLED: ${BOOTSTRAP_ADMIN_ENABLED:-false}
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-}

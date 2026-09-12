@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.falconmobile.bilim_scan.catalog.dto.CatalogItemRequestDto;
+import uz.falconmobile.bilim_scan.catalog.dto.GuruhRequestDto;
 import uz.falconmobile.bilim_scan.catalog.model.Guruh;
 import uz.falconmobile.bilim_scan.catalog.service.GuruhService;
 
@@ -27,12 +28,12 @@ public class GuruhController {
     }
 
     @PostMapping
-    public Guruh create(@RequestBody CatalogItemRequestDto dto) {
+    public Guruh create(@RequestBody GuruhRequestDto dto) {
         return guruhService.create(dto);
     }
 
     @PutMapping("/{id}")
-    public Guruh update(@PathVariable String id, @RequestBody CatalogItemRequestDto dto) {
+    public Guruh update(@PathVariable String id, @RequestBody GuruhRequestDto dto) {
         return guruhService.update(id, dto);
     }
 

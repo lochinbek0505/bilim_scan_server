@@ -3,8 +3,10 @@ package uz.falconmobile.bilim_scan.catalog.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uz.falconmobile.bilim_scan.catalog.dto.CatalogItemRequestDto;
+import uz.falconmobile.bilim_scan.catalog.dto.FanRequestDto;
 import uz.falconmobile.bilim_scan.catalog.model.Fan;
 import uz.falconmobile.bilim_scan.catalog.repository.FanRepository;
+import uz.falconmobile.bilim_scan.catalog.repository.KafedraRepository;
 
 import java.util.List;
 
@@ -12,7 +14,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FanService {
     private final FanRepository fanRepository;
-
+    private final KafedraRepository kafedraRepository;
     public List<Fan> getAll() {
         return fanRepository.findAll();
     }
@@ -22,14 +24,23 @@ public class FanService {
                 .orElseThrow(() -> new RuntimeException("Fan topilmadi: " + id));
     }
 
-    public Fan create(CatalogItemRequestDto dto) {
+    public Fan create(FanRequestDto dto) {
         Fan fan = new Fan();
+        if(dto.getKafedraId() != null) {
+            fan.setKafedra(kafedraRepository.findById(dto.getKafedraId())
+                    .orElseThrow(() -> new RuntimeException("Kafedra topilmadi: " + dto.getKafedraId())));
+        }
+
         fan.setName(requireName(dto.getName()));
         return fanRepository.save(fan);
     }
 
-    public Fan update(String id, CatalogItemRequestDto dto) {
+    public Fan update(String id, FanRequestDto dto) {
         Fan fan = getById(id);
+        if(dto.getKafedraId() != null) {
+            fan.setKafedra(kafedraRepository.findById(dto.getKafedraId())
+                    .orElseThrow(() -> new RuntimeException("Kafedra topilmadi: " + dto.getKafedraId())));
+        }
         fan.setName(requireName(dto.getName()));
         return fanRepository.save(fan);
     }

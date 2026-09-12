@@ -10,4 +10,5 @@ public class Fan {
     @Id
     private String id;
     private String name;
+    private Kafedra kafedra;
 }

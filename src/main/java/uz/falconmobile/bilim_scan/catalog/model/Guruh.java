@@ -10,4 +10,5 @@ public class Guruh {
     @Id
     private String id;
     private String name;
+    private Bosqich bosqich;
 }

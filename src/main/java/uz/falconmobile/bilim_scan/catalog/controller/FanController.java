@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.falconmobile.bilim_scan.catalog.dto.CatalogItemRequestDto;
+import uz.falconmobile.bilim_scan.catalog.dto.FanRequestDto;
 import uz.falconmobile.bilim_scan.catalog.model.Fan;
 import uz.falconmobile.bilim_scan.catalog.service.FanService;
 
@@ -27,12 +28,12 @@ public class FanController {
     }
 
     @PostMapping
-    public Fan create(@RequestBody CatalogItemRequestDto dto) {
+    public Fan create(@RequestBody FanRequestDto dto) {
         return fanService.create(dto);
     }
 
     @PutMapping("/{id}")
-    public Fan update(@PathVariable String id, @RequestBody CatalogItemRequestDto dto) {
+    public Fan update(@PathVariable String id, @RequestBody FanRequestDto dto) {
         return fanService.update(id, dto);
     }
 
