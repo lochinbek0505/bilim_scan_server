@@ -3,6 +3,8 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import uz.falconmobile.bilim_scan.catalog.dto.CatalogItemResponseDto;
+import uz.falconmobile.bilim_scan.catalog.model.Fan;
+import uz.falconmobile.bilim_scan.catalog.model.Guruh;
 
 
 @Data
@@ -18,7 +20,7 @@ public class User {
     private String patronymic;
     private String profileImageUrl;
     private CatalogItemResponseDto bosqichId;
-    private CatalogItemResponseDto guruhId;
+    private Guruh guruhId;
     private CatalogItemResponseDto kafedraId;
-    private CatalogItemResponseDto fanId;
+    private Fan fanId;
 }

@@ -2,6 +2,8 @@ package uz.falconmobile.bilim_scan.exam.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.falconmobile.bilim_scan.catalog.repository.FanRepository;
+import uz.falconmobile.bilim_scan.catalog.repository.GuruhRepository;
 import uz.falconmobile.bilim_scan.exam.dto.ExamCreateDto;
 import uz.falconmobile.bilim_scan.exam.dto.StudentAnswerSubmitDto;
 import uz.falconmobile.bilim_scan.exam.dto.StudentExamStartResponseDto;
@@ -28,7 +30,7 @@ public class ExamService {
     private final ExamSessionRepository examSessionRepository;
     private final StudentExamRepository studentExamRepository;
     private final TestQuestionRepository testQuestionRepository;
-
+    private final GuruhRepository guruhRepository;
 
     // Barcha imtihonlarni olish
     public List<ExamSession> getAllExamSessions() {
@@ -38,8 +40,12 @@ public class ExamService {
     // 1. Imtihon yaratish (Guruh va Testni biriktirish)
     public ExamSession createExam(ExamCreateDto dto) {
         ExamSession session = new ExamSession();
-        session.setTestId(dto.getTestId());
-        session.setGuruhId(dto.getGuruhId());
+        if (dto.getGuruhId() != null) {
+            session.setGuruh(guruhRepository.findById(dto.getGuruhId())
+                    .orElseThrow(() -> new RuntimeException("Guruh topilmadi: " + dto.getGuruhId())));
+        }
+        session.setName(dto.getName());
+        session.setTest(dto.getTestId());
         session.setDurationMinutes(dto.getDurationMinutes());
         session.setQuestionCount(dto.getQuestionCount() != null ? dto.getQuestionCount() : 15);
         session.setMaxAttempts(dto.getMaxAttempts() != null ? dto.getMaxAttempts() : 1);
@@ -47,6 +53,7 @@ public class ExamService {
         session.setCombinedTestIds(dto.getCombinedTestIds());
         return examSessionRepository.save(session);
     }
+
     public StudentExamStartResponseDto startStudentExam(String examSessionId, String studentId) {
         ExamSession session = examSessionRepository.findById(examSessionId)
                 .orElseThrow(() -> new RuntimeException("Imtihon topilmadi"));
@@ -66,14 +73,14 @@ public class ExamService {
 
             // Hozirgi imkoniyat bilan for orqali yig'ib oldik
             allQuestions = new ArrayList<>();
-            for(String tId : session.getCombinedTestIds()) {
+            for (String tId : session.getCombinedTestIds()) {
                 allQuestions.addAll(testQuestionRepository.findByTestId(tId));
             }
         } else {
-            allQuestions = testQuestionRepository.findByTestId(session.getTestId());
+            allQuestions = testQuestionRepository.findByTestId(session.getTest());
         }
 
-        if(allQuestions.isEmpty()){
+        if (allQuestions.isEmpty()) {
             throw new RuntimeException("Testda savollar mavjud emas");
         }
 
@@ -157,6 +164,7 @@ public class ExamService {
                 .options(optionDtos)
                 .build();
     }
+
     // 3. Imtihonni yakunlash va natijani hisoblash
 // Imtihonni yakunlash va natijani hisoblash (Yangilangan versiya)
     public StudentExamSubmitResponseDto submitExam(String studentExamId, StudentAnswerSubmitDto dto) {
@@ -231,6 +239,14 @@ public class ExamService {
                 .questions(questionDtos)
                 .build();
     }
+
+    public boolean deleteExamSession(String examSessionId) {
+        ExamSession session = examSessionRepository.findById(examSessionId)
+                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
+        examSessionRepository.delete(session);
+        return true;
+    }
+
     private boolean checkAnswerIsCorrect(TestQuestion question, List<String> studentAnswers) {
         // Savol variantlari ichidan isTrue qiymati true bo'lganlarini ajratamiz
         List<String> correctOptions = question.getOptions().stream()

@@ -47,4 +47,10 @@ public class ExamController {
             @RequestBody StudentAnswerSubmitDto dto) {
         return examService.submitExam(studentExamId, dto);
     }
+
+    @DeleteMapping("/{examSessionId}")
+    public String deleteExamSession(@PathVariable String examSessionId) {
+        examService.deleteExamSession(examSessionId);
+        return "Imtihon sessiyasi o'chirildi";
+    }
 }

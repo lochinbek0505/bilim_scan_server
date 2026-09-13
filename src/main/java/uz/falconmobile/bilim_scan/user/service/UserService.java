@@ -125,12 +125,9 @@ public class UserService {
 
             Guruh guruh = guruhRepository.findById(normalizedGuruhId)
                     .orElseThrow(() -> new RuntimeException("Guruh topilmadi: " + normalizedGuruhId));
-            CatalogItemResponseDto guruhDto = CatalogItemResponseDto.builder()
-                    .id(guruh.getId())
-                    .name(guruh.getName())
-                    .build();
+
             user.setBosqichId(bosqichDto);
-            user.setGuruhId(guruhDto);
+            user.setGuruhId(guruh);
             user.setKafedraId(null);
             user.setFanId(null);
             return;
@@ -155,14 +152,11 @@ public class UserService {
 
             Fan fan = fanRepository.findById(normalizedFanId)
                     .orElseThrow(() -> new RuntimeException("Fan topilmadi: " + normalizedFanId));
-            CatalogItemResponseDto fanDto = CatalogItemResponseDto.builder()
-                    .id(fan.getId())
-                    .name(fan.getName())
-                    .build();
+
 
 
             user.setKafedraId(kafedraDto);
-            user.setFanId(fanDto);
+            user.setFanId(fan);
             user.setBosqichId(null);
             user.setGuruhId(null);
             return;
