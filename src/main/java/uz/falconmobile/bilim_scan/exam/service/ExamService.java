@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uz.falconmobile.bilim_scan.catalog.repository.FanRepository;
 import uz.falconmobile.bilim_scan.catalog.repository.GuruhRepository;
+import uz.falconmobile.bilim_scan.eduplan.model.EduPlanTopic;
 import uz.falconmobile.bilim_scan.exam.dto.ExamCreateDto;
 import uz.falconmobile.bilim_scan.exam.dto.StudentAnswerSubmitDto;
 import uz.falconmobile.bilim_scan.exam.dto.StudentExamStartResponseDto;
@@ -98,6 +99,7 @@ public class ExamService {
 
         // Talabaga yuborish uchun DTO ni yig'ish
         return StudentExamStartResponseDto.builder()
+                .id(studentExam.getId())
                 .studentExamId(studentExam.getId())
                 .examSessionId(session.getId())
                 .startedAt(studentExam.getStartedAt())
@@ -142,6 +144,7 @@ public class ExamService {
     }
 
     // Talabaga ketadigan javobdan "isTrue" qismini olib tashlash
+// Talabaga ketadigan javobdan "isTrue" qismini olib tashlash
     private TestQuestionResponseDto toQuestionResponseSafe(TestQuestion question) {
         List<TestOptionDto> optionDtos = question.getOptions() == null
                 ? Collections.emptyList()
@@ -154,22 +157,24 @@ public class ExamService {
                 })
                 .toList();
 
+        // EduPlanTopic obyektidan ismni xavfsiz ajratib olish
+        EduPlanTopic mavzuName = (question.getMavzu() != null) ? question.getMavzu() : null;
+
         return TestQuestionResponseDto.builder()
                 .id(question.getId())
                 .testId(question.getTestId())
                 .title(question.getTitle())
-                .mavzu(question.getMavzu())
+                .mavzu(mavzuName) // <-- To'g'rilangan joy
                 .type(question.getType())
                 .relatedQuestionIds(question.getRelatedQuestionIds() == null ? Collections.emptyList() : question.getRelatedQuestionIds())
                 .options(optionDtos)
                 .build();
     }
 
-    // 3. Imtihonni yakunlash va natijani hisoblash
-// Imtihonni yakunlash va natijani hisoblash (Yangilangan versiya)
     public StudentExamSubmitResponseDto submitExam(String studentExamId, StudentAnswerSubmitDto dto) {
+
         StudentExam studentExam = studentExamRepository.findById(studentExamId)
-                .orElseThrow(() -> new RuntimeException("Talaba imtihoni topilmadi"));
+                .orElseThrow(() -> new IllegalArgumentException("Imtihon topilmadi: " + studentExamId));
 
         studentExam.setFinishedAt(Instant.now());
 
@@ -178,21 +183,28 @@ public class ExamService {
 
         Map<String, TopicStats> topicStatsMap = new HashMap<>();
 
-        // ... (Sizdagi avvalgi tekshirish logikasi o'zgarishsiz qoladi) ...
         for (String questionId : studentExam.getAssignedQuestionIds()) {
             TestQuestion question = testQuestionRepository.findById(questionId).orElse(null);
             if (question == null) continue;
 
-            String mavzu = question.getMavzu();
-            topicStatsMap.putIfAbsent(mavzu, new TopicStats());
+            // Mavzu ID'sini olish (agar yo'q bo'lsa "unknown" deb olamiz)
+            String topicKey = (question.getMavzu() != null && question.getMavzu().getId() != null)
+                    ? question.getMavzu().getId()
+                    : "unknown_topic";
+
+            topicStatsMap.putIfAbsent(topicKey, new TopicStats());
+
+// ... (qolgan kodlar bir xil, faqat topicName o'rniga topicKey ishlatasiz)
+
+            topicStatsMap.putIfAbsent(topicKey, new TopicStats());
 
             List<String> studentAnswers = dto.getAnswers().getOrDefault(questionId, Collections.emptyList());
             boolean isCorrect = checkAnswerIsCorrect(question, studentAnswers);
 
-            topicStatsMap.get(mavzu).total++;
+            topicStatsMap.get(topicKey).total++;
             if (isCorrect) {
                 correctAnswersCount++;
-                topicStatsMap.get(mavzu).correct++;
+                topicStatsMap.get(topicKey).correct++;
             }
         }
 
@@ -211,15 +223,13 @@ public class ExamService {
         // Natijani bazaga saqlaymiz
         studentExam = studentExamRepository.save(studentExam);
 
-        // --- YANGI QO'SHILGAN QISM ---
-        // Bazadan savollarni to'liq chaqirib olish (Tartibni saqlash maqsadida stream ishlatamiz)
+        // Bazadan savollarni to'liq chaqirib olish
         List<TestQuestion> fullQuestions = studentExam.getAssignedQuestionIds().stream()
                 .map(id -> testQuestionRepository.findById(id).orElse(null))
                 .filter(Objects::nonNull)
                 .toList();
 
-        // Savollarni DTO ga o'girish (Agar o'quvchi to'g'ri javoblarni ko'rishi mumkin bo'lsa o'zingizning oddiy toQuestionResponse ishlating.
-        // Agar yashirmoqchi bo'lsangiz biz avvalroq yozgan toQuestionResponseSafe metodidan foydalaning)
+        // Savollarni DTO ga o'girish
         List<TestQuestionResponseDto> questionDtos = fullQuestions.stream()
                 .map(this::toQuestionResponseSafe)
                 .toList();

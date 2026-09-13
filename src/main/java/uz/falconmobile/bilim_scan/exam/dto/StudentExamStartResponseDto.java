@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 @Builder
 public class StudentExamStartResponseDto {
+    private  String id;
     private String studentExamId;
     private String examSessionId;
     private Instant startedAt;

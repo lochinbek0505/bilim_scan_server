@@ -8,5 +8,6 @@ public class TestRequestDto {
     private String fanId;
     private String kafedraId;
     private String eduPlanId;
-    private Integer ajratilganVaqt;
+    private  String oquvYili;
+    private String oquvOyi;
 }

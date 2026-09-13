@@ -3,6 +3,7 @@ package uz.falconmobile.bilim_scan.test.model;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import uz.falconmobile.bilim_scan.eduplan.model.EduPlanTopic;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public class TestQuestion {
     private int tr;
     private String testId;
     private String title;
-    private String mavzu;
+    private EduPlanTopic mavzu;
     private QuestionType type;
     private List<String> relatedQuestionIds;
     private List<TestOption> options;

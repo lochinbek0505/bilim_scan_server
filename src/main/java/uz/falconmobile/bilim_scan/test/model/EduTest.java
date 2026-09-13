@@ -20,5 +20,6 @@ public class EduTest {
     private Fan fan;
     private Kafedra kafedra;
     private EduPlan oquvReja;
-    private Integer ajratilganVaqt;
+    private String oquvYili;
+    private String oquvOyi;
 }

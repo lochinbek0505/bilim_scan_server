@@ -16,5 +16,6 @@ public class TestResponseDto {
     private CatalogItemResponseDto fan;
     private CatalogItemResponseDto kafedra;
     private EduPlanSummaryDto oquvReja;
-    private Integer ajratilganVaqt;
+    private String oquvYili;
+    private String oquvOyi;
 }

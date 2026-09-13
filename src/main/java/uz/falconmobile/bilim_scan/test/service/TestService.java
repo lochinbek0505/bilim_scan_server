@@ -9,6 +9,7 @@ import uz.falconmobile.bilim_scan.catalog.repository.FanRepository;
 import uz.falconmobile.bilim_scan.catalog.repository.KafedraRepository;
 import uz.falconmobile.bilim_scan.eduplan.model.EduPlan;
 import uz.falconmobile.bilim_scan.eduplan.repository.EduPlanRepository;
+import uz.falconmobile.bilim_scan.eduplan.repository.EduPlanTopicRepository;
 import uz.falconmobile.bilim_scan.test.dto.*;
 import uz.falconmobile.bilim_scan.test.model.EduTest;
 import uz.falconmobile.bilim_scan.test.model.QuestionType;
@@ -29,7 +30,7 @@ public class TestService {
     private final FanRepository fanRepository;
     private final KafedraRepository kafedraRepository;
     private final EduPlanRepository eduPlanRepository;
-
+    private final EduPlanTopicRepository eduPlanTopicRepository;
     public List<TestResponseDto> getAllTests() {
         return eduTestRepository.findAll()
                 .stream()
@@ -48,7 +49,8 @@ public class TestService {
         test.setFan(findFanByIdOrThrow(dto.getFanId()));
         test.setKafedra(findKafedraByIdOrThrow(dto.getKafedraId()));
         test.setOquvReja(findEduPlanByIdOrThrow(dto.getEduPlanId()));
-        test.setAjratilganVaqt(requirePositive(dto.getAjratilganVaqt(), "Ajratilgan vaqt bo'sh bo'lishi yoki 0 bo'lishi mumkin emas"));
+        test.setOquvYili(test.getOquvReja().getOquvYili());
+        test.setOquvOyi(test.getOquvYili());
         test.setCreateAt(now);
         test.setUpdateAt(now);
         return toTestResponse(eduTestRepository.save(test));
@@ -60,8 +62,9 @@ public class TestService {
         test.setFan(findFanByIdOrThrow(dto.getFanId()));
         test.setKafedra(findKafedraByIdOrThrow(dto.getKafedraId()));
         test.setOquvReja(findEduPlanByIdOrThrow(dto.getEduPlanId()));
-        test.setAjratilganVaqt(requirePositive(dto.getAjratilganVaqt(), "Ajratilgan vaqt bo'sh bo'lishi yoki 0 bo'lishi mumkin emas"));
         test.setUpdateAt(Instant.now());
+        test.setOquvYili(test.getOquvYili());
+        test.setOquvOyi(test.getOquvOyi());
         return toTestResponse(eduTestRepository.save(test));
     }
 
@@ -155,7 +158,11 @@ public class TestService {
     // Savolning bog'liqlikdan (related) tashqari barcha ma'lumotlarini to'ldirish
     private void applyQuestionDtoBasic(TestQuestion question, TestQuestionRequestDto dto) {
         question.setTitle(requireNonBlank(dto.getTitle(), "Savol sarlavhasi bo'sh bo'lishi mumkin emas"));
-        question.setMavzu(requireNonBlank(dto.getMavzu(), "Savol mavzusi bo'sh bo'lishi mumkin emas"));
+        if(eduPlanTopicRepository.existsById(dto.getTopicId()) == false){
+            throw new RuntimeException("Savol mavzusi topilmadi: " + dto.getTopicId());
+        }else{
+            question.setMavzu(eduPlanTopicRepository.findById(dto.getTopicId()).get());
+        }
         QuestionType type = requireType(dto.getType());
         question.setType(type);
         question.setTr(requirePositive(dto.getTr(), "Savol tartib raqami (tr) noto'g'ri"));
@@ -264,7 +271,6 @@ public class TestService {
                 .fan(fanDto)
                 .kafedra(kafedraDto)
                 .oquvReja(rejaDto)
-                .ajratilganVaqt(test.getAjratilganVaqt())
                 .build();
     }
 

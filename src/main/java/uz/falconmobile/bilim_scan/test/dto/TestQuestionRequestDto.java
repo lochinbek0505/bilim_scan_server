@@ -9,7 +9,7 @@ import java.util.List;
 public class TestQuestionRequestDto {
     private Integer tr;
     private String title;
-    private String mavzu;
+    private String topicId;
     private QuestionType type;
     private List<Integer> relatedQuestionTrs; // ID lar emas, TR lar keladi
     private List<TestOptionDto> options;
