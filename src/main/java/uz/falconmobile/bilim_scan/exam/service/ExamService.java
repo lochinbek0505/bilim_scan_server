@@ -5,10 +5,7 @@ import org.springframework.stereotype.Service;
 import uz.falconmobile.bilim_scan.catalog.repository.FanRepository;
 import uz.falconmobile.bilim_scan.catalog.repository.GuruhRepository;
 import uz.falconmobile.bilim_scan.eduplan.model.EduPlanTopic;
-import uz.falconmobile.bilim_scan.exam.dto.ExamCreateDto;
-import uz.falconmobile.bilim_scan.exam.dto.StudentAnswerSubmitDto;
-import uz.falconmobile.bilim_scan.exam.dto.StudentExamStartResponseDto;
-import uz.falconmobile.bilim_scan.exam.dto.StudentExamSubmitResponseDto;
+import uz.falconmobile.bilim_scan.exam.dto.*;
 import uz.falconmobile.bilim_scan.exam.model.ExamSession;
 import uz.falconmobile.bilim_scan.exam.model.MasteryLevel;
 import uz.falconmobile.bilim_scan.exam.model.StudentExam;
@@ -34,10 +31,39 @@ public class ExamService {
     private final GuruhRepository guruhRepository;
 
     // Barcha imtihonlarni olish
-    public List<ExamSession> getAllExamSessions() {
-        return examSessionRepository.findAll();
-    }
+// Talaba uchun faol va o'z guruhiga tegishli imtihonlar ro'yxatini shakllantirish
+    public List<StudentAvailableExamDto> getAvailableExamsForStudent(String guruhId, String studentId) {
 
+        // 1. Faol va faqat shu guruhga tegishli imtihonlarni bazadan olish
+        List<ExamSession> activeSessions = examSessionRepository.findByGuruhIdAndIsActiveTrue(guruhId);
+
+        List<StudentAvailableExamDto> responseList = new ArrayList<>();
+
+        for (ExamSession session : activeSessions) {
+            // 2. Talabaning ushbu imtihon sessiyasidagi avvalgi barcha urinishlarini topish
+            List<StudentExam> attempts = studentExamRepository.findByExamSessionIdAndStudentId(session.getId(), studentId);
+
+            int usedAttempts = attempts.size();
+            int maxAttempts = session.getMaxAttempts() != null ? session.getMaxAttempts() : 1;
+            int remainingAttempts = maxAttempts - usedAttempts;
+
+            // 3. DTO ga yig'ish (Guruh ma'lumotini to'liq jo'natish shart emas, faqat kerakli qismlarni yuboramiz)
+            responseList.add(StudentAvailableExamDto.builder()
+                    .id(session.getId())
+                    .name(session.getName())
+                    .test(session.getTest())
+                    .startTime(session.getStartTime())
+                    .endTime(session.getEndTime())
+                    .durationMinutes(session.getDurationMinutes())
+                    .questionCount(session.getQuestionCount())
+                    .maxAttempts(maxAttempts)
+                    .usedAttempts(usedAttempts)
+                    .remainingAttempts(Math.max(remainingAttempts, 0)) // Manfiy son bo'lib ketmasligi uchun
+                    .build());
+        }
+
+        return responseList;
+    }
     // 1. Imtihon yaratish (Guruh va Testni biriktirish)
     public ExamSession createExam(ExamCreateDto dto) {
         ExamSession session = new ExamSession();

@@ -2,10 +2,7 @@ package uz.falconmobile.bilim_scan.exam.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import uz.falconmobile.bilim_scan.exam.dto.ExamCreateDto;
-import uz.falconmobile.bilim_scan.exam.dto.StudentAnswerSubmitDto;
-import uz.falconmobile.bilim_scan.exam.dto.StudentExamStartResponseDto;
-import uz.falconmobile.bilim_scan.exam.dto.StudentExamSubmitResponseDto;
+import uz.falconmobile.bilim_scan.exam.dto.*;
 import uz.falconmobile.bilim_scan.exam.model.ExamSession;
 import uz.falconmobile.bilim_scan.exam.model.StudentExam;
 import uz.falconmobile.bilim_scan.exam.service.ExamService;
@@ -19,12 +16,13 @@ public class ExamController {
 
     private final ExamService examService;
 
-    // Yaratilgan barcha imtihonlar ro'yxatini olish (Admin yoki O'qituvchi uchun)
-    @GetMapping
-    public List<ExamSession> getAllExamSessions() {
-        return examService.getAllExamSessions();
+    // Talaba o'ziga tegishli (guruhi bo'yicha) faol imtihonlarni va urinishlari qoldig'ini olishi
+    @GetMapping("/student/{studentId}/guruh/{guruhId}")
+    public List<StudentAvailableExamDto> getStudentAvailableExams(
+            @PathVariable String studentId,
+            @PathVariable String guruhId) {
+        return examService.getAvailableExamsForStudent(guruhId, studentId);
     }
-
     // O'qituvchi yoki Admin imtihon ochishi uchun
     @PostMapping("/create")
     public ExamSession createExam(@RequestBody ExamCreateDto dto) {
