@@ -48,6 +48,11 @@ public class ExamController {
         return examService.submitExam(studentExamId, dto);
     }
 
+    @GetMapping("/{examSessionId}/score/{studentId}")
+    public StudentExamSubmitResponseDto getStudentExam(@PathVariable String examSessionId , @PathVariable String studentId) {
+        return examService.getExamResultBySessionAndStudent(examSessionId, studentId);
+    }
+
     @DeleteMapping("/{examSessionId}")
     public String deleteExamSession(@PathVariable String examSessionId) {
         examService.deleteExamSession(examSessionId);

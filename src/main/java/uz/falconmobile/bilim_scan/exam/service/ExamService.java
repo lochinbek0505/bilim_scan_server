@@ -250,6 +250,49 @@ public class ExamService {
                 .build();
     }
 
+    // Talabaning ma'lum bir sessiyadagi (eng oxirgi) natijasini to'liq savollari bilan olish
+    public StudentExamSubmitResponseDto getExamResultBySessionAndStudent(String examSessionId, String studentId) {
+
+        // Talabaning ushbu sessiyadagi barcha urinishlarini olamiz
+        List<StudentExam> attempts = studentExamRepository.findByExamSessionIdAndStudentId(examSessionId, studentId);
+
+        if (attempts.isEmpty()) {
+            throw new RuntimeException("Talabaning ushbu imtihon bo'yicha natijasi topilmadi");
+        }
+
+        // Yakunlangan (finishedAt null bo'lmagan) urinishlar ichidan eng oxirgisini ajratib olamiz
+        StudentExam latestExam = attempts.stream()
+                .filter(exam -> exam.getFinishedAt() != null)
+                .max(Comparator.comparing(StudentExam::getFinishedAt))
+                .orElseThrow(() -> new RuntimeException("Yakunlangan imtihon topilmadi"));
+
+        // Bazadan savollarni to'liq chaqirib olish
+        List<TestQuestion> fullQuestions = latestExam.getAssignedQuestionIds().stream()
+                .map(id -> testQuestionRepository.findById(id).orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+
+        // Savollarni DTO ga o'girish
+        List<TestQuestionResponseDto> questionDtos = fullQuestions.stream()
+                .map(this::toQuestionResponseSafe)
+                .toList();
+
+        // Submit bilan bir xil DTO ni yig'ib qaytarish
+        return StudentExamSubmitResponseDto.builder()
+                .id(latestExam.getId())
+                .examSessionId(latestExam.getExamSessionId())
+                .studentId(latestExam.getStudentId())
+                .startedAt(latestExam.getStartedAt())
+                .finishedAt(latestExam.getFinishedAt())
+                .totalQuestions(latestExam.getTotalQuestions())
+                .correctAnswers(latestExam.getCorrectAnswers())
+                .percentage(latestExam.getPercentage())
+                .masteryLevel(latestExam.getMasteryLevel())
+                .topicMastery(latestExam.getTopicMastery())
+                .questions(questionDtos)
+                .build();
+    }
+
     public boolean deleteExamSession(String examSessionId) {
         ExamSession session = examSessionRepository.findById(examSessionId)
                 .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
