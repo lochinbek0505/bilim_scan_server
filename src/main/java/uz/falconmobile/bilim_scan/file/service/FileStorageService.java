@@ -20,8 +20,15 @@ public class FileStorageService {
                 Files.createDirectories(uploadPath); // Papka yo'q bo'lsa, yaratadi
             }
 
-            // Faylga unikal nom berish
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            // 1. Asl fayl nomidan faqat kengaytmani ajratib olish (masalan: .jpg, .png)
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+
+            // 2. Original nomni qo'shmasdan, faqat UUID va kengaytmadan iborat unikal nom yaratish
+            String fileName = UUID.randomUUID().toString() + extension;
             Path filePath = uploadPath.resolve(fileName);
 
             // Faylni papkaga nusxalash

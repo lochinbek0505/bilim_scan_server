@@ -79,6 +79,7 @@ public class UserService {
         user.setProfileImageUrl(requireNonBlank(dto.getProfileImageUrl(), "Profile rasmi linki bo'sh bo'lishi mumkin emas"));
 
 
+        System.out.println("Updating user: " + user.getId() + ", role: " + role + ", bosqichId: " + dto.getBosqichId() + ", guruhId: " + dto.getGuruhId() + ", kafedraId: " + dto.getKafedraId() + ", fanId: " + dto.getFanId()+", profileImage: " + dto.getProfileImageUrl());
 
         // Parolni yangilash
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
