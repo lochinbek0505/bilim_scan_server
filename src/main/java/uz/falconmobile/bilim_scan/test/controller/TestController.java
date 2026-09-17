@@ -19,10 +19,12 @@ public class TestController {
     private final TestService testService;
 
     @GetMapping
-    public List<TestResponseDto> getAllTests() {
-        return testService.getAllTests();
+    public List<TestResponseDto> getAllTests(
+            @RequestParam(required = false) String fanId,
+            @RequestParam(required = false) String kafedraId
+    ) {
+        return testService.getAllTests(fanId, kafedraId);
     }
-
     @GetMapping("/{testId}")
     public TestResponseDto getTestById(@PathVariable String testId) {
         return testService.getTestById(testId);

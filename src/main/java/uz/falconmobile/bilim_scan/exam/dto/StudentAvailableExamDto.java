@@ -16,7 +16,6 @@ public class StudentAvailableExamDto {
     private Integer durationMinutes;
     private Integer questionCount;
     
-    // Urinishlar bo'yicha ma'lumotlar
     private Integer maxAttempts;
     private Integer usedAttempts;
     private Integer remainingAttempts;

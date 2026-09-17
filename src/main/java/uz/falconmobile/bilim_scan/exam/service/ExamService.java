@@ -64,6 +64,12 @@ public class ExamService {
 
         return responseList;
     }
+
+    // Admin uchun barcha imtihonlarni (faol va nofaol) qaytarish
+    public List<ExamSession> getAllExamSessionsForAdmin() {
+        return examSessionRepository.findAll();
+    }
+
     // 1. Imtihon yaratish (Guruh va Testni biriktirish)
     public ExamSession createExam(ExamCreateDto dto) {
         ExamSession session = new ExamSession();
@@ -317,6 +323,16 @@ public class ExamService {
                 .topicMastery(latestExam.getTopicMastery())
                 .questions(questionDtos)
                 .build();
+    }
+
+    // Imtihonni nofaol (disable) holatga o'tkazish
+    public boolean disableExam(String examSessionId) {
+        ExamSession session = examSessionRepository.findById(examSessionId)
+                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
+
+        session.setActive(false); // isActive holatini false qilamiz
+        examSessionRepository.save(session);
+        return true;
     }
 
     public boolean deleteExamSession(String examSessionId) {

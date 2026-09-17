@@ -9,5 +9,5 @@ import java.util.List;
 public interface ExamSessionRepository extends MongoRepository<ExamSession, String> {
 
     List<ExamSession> findByGuruhIdAndIsActiveTrue(String guruhId);
-
+    List<ExamSession> findByTestIn(List<String> testIds);
 }

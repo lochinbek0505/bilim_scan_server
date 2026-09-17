@@ -2,6 +2,7 @@ package uz.falconmobile.bilim_scan.analytics.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.falconmobile.bilim_scan.analytics.dto.GlobalStatisticsDto;
 import uz.falconmobile.bilim_scan.analytics.dto.GroupStatisticsDto;
 import uz.falconmobile.bilim_scan.analytics.dto.StudentMonitoringDto;
 import uz.falconmobile.bilim_scan.exam.model.ExamSession;
@@ -11,6 +12,9 @@ import uz.falconmobile.bilim_scan.exam.repository.ExamSessionRepository;
 import uz.falconmobile.bilim_scan.exam.repository.StudentExamRepository;
 import uz.falconmobile.bilim_scan.test.model.EduTest;
 import uz.falconmobile.bilim_scan.test.repository.EduTestRepository;
+import uz.falconmobile.bilim_scan.user.model.Role;
+import uz.falconmobile.bilim_scan.user.model.User;
+import uz.falconmobile.bilim_scan.user.repository.UserRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,7 +26,7 @@ public class AnalyticsService {
     private final StudentExamRepository studentExamRepository;
     private final ExamSessionRepository examSessionRepository;
     private final EduTestRepository eduTestRepository; // EduTest modelini bazadan olish uchun
-
+    private final UserRepository userRepository; // Konstruktorga qo'shishni unutmang
     // 1. Talaba monitoringi (Yillar, oylar, fanlar kesimida)
     public StudentMonitoringDto getStudentMonitoring(String studentId) {
         List<StudentExam> allExams = studentExamRepository.findByStudentId(studentId);
@@ -120,10 +124,58 @@ public class AnalyticsService {
     }
 
     // 2. Guruh yoki bosqich uchun umumiy statistika (Fanlar kesimida)
+    public GlobalStatisticsDto getLyceumStatistics() {
+        // Barcha USER roldagi o'quvchilarni olamiz
+        List<String> allStudentIds = userRepository.findByRole(Role.USER).stream()
+                .map(User::getId)
+                .toList();
+
+        List<StudentExam> allExams = studentExamRepository.findByStudentIdIn(allStudentIds);
+
+        return buildGlobalStatistics("LYCEUM", null, allExams);
+    }
+
+    // =========================================================================
+    // 4. BOSQICH (KURS) BO'YICHA STATISTIKA
+    // =========================================================================
+    public GlobalStatisticsDto getStageStatistics(String bosqichId) {
+        // Faqat bitta bosqichdagi talabalarni olamiz
+        List<String> stageStudentIds = userRepository.findByBosqichId_IdAndRole(bosqichId, Role.USER).stream()
+                .map(User::getId)
+                .toList();
+
+        List<StudentExam> stageExams = studentExamRepository.findByStudentIdIn(stageStudentIds);
+
+        return buildGlobalStatistics("STAGE", bosqichId, stageExams);
+    }
+
+    // =========================================================================
+    // 5. FAN BO'YICHA UMUMIY STATISTIKA (Barcha kurslar va guruhlar kesimida)
+    // =========================================================================
+    public GlobalStatisticsDto getSubjectStatistics(String fanId) {
+        // Shu fanga tegishli barcha EduTest larni topamiz
+        List<String> testIds = eduTestRepository.findAll().stream()
+                .filter(test -> test.getFan() != null && test.getFan().getId().equals(fanId))
+                .map(EduTest::getId)
+                .toList();
+
+        // Shu testlarga ulangan barcha sessiyalarni olamiz
+        List<String> sessionIds = examSessionRepository.findByTestIn(testIds).stream()
+                .map(ExamSession::getId)
+                .toList();
+
+        // Ushbu sessiyalardagi barcha talaba natijalari
+        List<StudentExam> subjectExams = studentExamRepository.findByExamSessionIdIn(sessionIds);
+
+        return buildGlobalStatistics("SUBJECT", fanId, subjectExams);
+    }
+    // =========================================================================
+    // 2. GURUH UCHUN UMUMIY STATISTIKA (Fanlar kesimida)
+    // =========================================================================
     public GroupStatisticsDto getGroupStatistics(String guruhId) {
         // Bu yerda guruhga tegishli barcha sessionlarni topamiz
         List<ExamSession> groupSessions = examSessionRepository.findAll().stream()
-                .filter(s -> s.getGuruh() != null && s.getGuruh().getId().equals(guruhId)) //[cite: 6]
+                .filter(s -> s.getGuruh() != null && s.getGuruh().getId().equals(guruhId))
                 .toList();
 
         Set<String> uniqueStudents = new HashSet<>();
@@ -132,13 +184,12 @@ public class AnalyticsService {
         int examCount = 0;
 
         for (ExamSession session : groupSessions) {
-            EduTest test = eduTestRepository.findById(session.getTest()).orElse(null); //[cite: 6]
+            EduTest test = eduTestRepository.findById(session.getTest()).orElse(null);
             String subjectName = (test != null && test.getFan() != null) ? test.getFan().getName() : "Boshqa fanlar";
 
             // Ushbu sessiyadagi barcha talaba natijalari
-            // studentExamRepository'ga findByExamSessionId ni qo'shishingiz kerak (agar yo'q bo'lsa)
             List<StudentExam> exams = studentExamRepository.findAll().stream()
-                    .filter(e -> e.getExamSessionId().equals(session.getId())) //[cite: 7]
+                    .filter(e -> e.getExamSessionId().equals(session.getId()))
                     .toList();
 
             for (StudentExam exam : exams) {
@@ -185,7 +236,88 @@ public class AnalyticsService {
                 .subjectStats(finalStats)
                 .build();
     }
+    private GlobalStatisticsDto buildGlobalStatistics(String scope, String scopeId, List<StudentExam> exams) {
+        Set<String> uniqueStudents = new HashSet<>();
+        double totalPercentage = 0.0;
+        int mastered = 0, satisfactory = 0, failed = 0;
 
+        // Vaqt dinamikasi uchun (Yil_Oy -> O'zlashtirishlar ro'yxati)
+        Map<String, List<Double>> timeDynamicMap = new HashMap<>();
+        // Fanlar kesimi uchun
+        Map<String, GroupStatisticsDto.SubjectStatsDto> subjectStatsMap = new HashMap<>();
+
+        for (StudentExam exam : exams) {
+            uniqueStudents.add(exam.getStudentId());
+            double percentage = exam.getPercentage() != null ? exam.getPercentage() : 0.0;
+            totalPercentage += percentage;
+
+            // Mastery Level hisoblash
+            if (percentage >= 80.0) mastered++;
+            else if (percentage >= 60.0) satisfactory++;
+            else failed++;
+
+            // Imtihon sessiyasi va Test orqali vaqt/fan ma'lumotlarini olish
+            ExamSession session = examSessionRepository.findById(exam.getExamSessionId()).orElse(null);
+            if (session != null && session.getTest() != null) {
+                EduTest test = eduTestRepository.findById(session.getTest()).orElse(null);
+                if (test != null) {
+                    // Dinamika uchun kalit (Masalan: "2023-2024_Sentyabr")
+                    String timeKey = test.getOquvYili() + "_" + test.getOquvOyi();
+                    timeDynamicMap.putIfAbsent(timeKey, new ArrayList<>());
+                    timeDynamicMap.get(timeKey).add(percentage);
+
+                    // Fanlar reytingi uchun yig'ish (faqat butun litsey yoki bosqich uchun)
+                    if (!scope.equals("SUBJECT") && test.getFan() != null) {
+                        String subjectName = test.getFan().getName();
+                        subjectStatsMap.putIfAbsent(subjectName, GroupStatisticsDto.SubjectStatsDto.builder()
+                                .subjectName(subjectName).averagePercentage(0.0)
+                                .masteredCount(0).satisfactoryCount(0).failedCount(0).build());
+
+                        GroupStatisticsDto.SubjectStatsDto sDto = subjectStatsMap.get(subjectName);
+                        sDto.setAveragePercentage(sDto.getAveragePercentage() + percentage);
+                        if (percentage >= 80.0) sDto.setMasteredCount(sDto.getMasteredCount() + 1);
+                        else if (percentage >= 60.0) sDto.setSatisfactoryCount(sDto.getSatisfactoryCount() + 1);
+                        else sDto.setFailedCount(sDto.getFailedCount() + 1);
+                    }
+                }
+            }
+        }
+
+
+
+        // Dinamika ma'lumotlarini DTO ga o'girish
+        List<GlobalStatisticsDto.TimeDynamicDto> dynamics = timeDynamicMap.entrySet().stream().map(entry -> {
+            String[] parts = entry.getKey().split("_");
+            List<Double> scores = entry.getValue();
+            double avg = scores.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+            return GlobalStatisticsDto.TimeDynamicDto.builder()
+                    .year(parts[0])
+                    .month(parts.length > 1 ? parts[1] : "Noma'lum")
+                    .averagePercentage(avg)
+                    .examCount(scores.size())
+                    .build();
+        }).toList();
+
+        // Fanlar ko'rsatkichlarining o'rtacha qiymatini hisoblash
+        List<GroupStatisticsDto.SubjectStatsDto> subjectPerformances = new ArrayList<>(subjectStatsMap.values());
+        for (GroupStatisticsDto.SubjectStatsDto stat : subjectPerformances) {
+            int count = stat.getMasteredCount() + stat.getSatisfactoryCount() + stat.getFailedCount();
+            if (count > 0) stat.setAveragePercentage(stat.getAveragePercentage() / count);
+        }
+
+        return GlobalStatisticsDto.builder()
+                .scope(scope)
+                .scopeId(scopeId)
+                .totalStudentsParticipated(uniqueStudents.size())
+                .totalExamsTaken(exams.size())
+                .overallAveragePercentage(exams.isEmpty() ? 0.0 : totalPercentage / exams.size())
+                .masteredCount(mastered)
+                .satisfactoryCount(satisfactory)
+                .failedCount(failed)
+                .timeDynamics(dynamics)
+                .subjectPerformances(subjectPerformances)
+                .build();
+    }
     private MasteryLevel calculateMastery(double percentage) {
         if (percentage < 60.0) return MasteryLevel.FAILED;
         if (percentage < 80.0) return MasteryLevel.SATISFACTORY;

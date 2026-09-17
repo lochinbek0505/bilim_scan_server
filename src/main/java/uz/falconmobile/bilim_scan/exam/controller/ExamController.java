@@ -1,6 +1,8 @@
 package uz.falconmobile.bilim_scan.exam.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.falconmobile.bilim_scan.exam.dto.*;
 import uz.falconmobile.bilim_scan.exam.model.ExamSession;
@@ -23,12 +25,25 @@ public class ExamController {
             @PathVariable String guruhId) {
         return examService.getAvailableExamsForStudent(guruhId, studentId);
     }
+
+    // Admin uchun barcha imtihon sessiyalarini olish
+    @GetMapping("/admin/all")
+    public List<ExamSession> getAllExamsForAdmin() {
+        return examService.getAllExamSessionsForAdmin();
+    }
+
+
     // O'qituvchi yoki Admin imtihon ochishi uchun
     @PostMapping("/create")
     public ExamSession createExam(@RequestBody ExamCreateDto dto) {
         return examService.createExam(dto);
     }
 
+    @PatchMapping("/{examSessionId}/disable")
+    public ResponseEntity<Boolean> disableExam(@PathVariable String examSessionId) {
+        examService.disableExam(examSessionId);
+        return ResponseEntity.ok(true);
+    }
     // Talaba o'ziga biriktirilgan imtihonni boshlashi (To'liq savollar qaytadi)
     @PostMapping("/{examSessionId}/start/{studentId}")
     public StudentExamStartResponseDto startExam(

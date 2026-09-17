@@ -31,13 +31,23 @@ public class TestService {
     private final KafedraRepository kafedraRepository;
     private final EduPlanRepository eduPlanRepository;
     private final EduPlanTopicRepository eduPlanTopicRepository;
-    public List<TestResponseDto> getAllTests() {
-        return eduTestRepository.findAll()
-                .stream()
+    public List<TestResponseDto> getAllTests(String fanId, String kafedraId) {
+        List<EduTest> tests;
+
+        if (fanId != null && !fanId.isBlank() && kafedraId != null && !kafedraId.isBlank()) {
+            tests = eduTestRepository.findByFanIdAndKafedraId(fanId, kafedraId);
+        } else if (fanId != null && !fanId.isBlank()) {
+            tests = eduTestRepository.findByFanId(fanId);
+        } else if (kafedraId != null && !kafedraId.isBlank()) {
+            tests = eduTestRepository.findByKafedraId(kafedraId);
+        } else {
+            tests = eduTestRepository.findAll();
+        }
+
+        return tests.stream()
                 .map(this::toTestResponse)
                 .toList();
     }
-
     public TestResponseDto getTestById(String testId) {
         return toTestResponse(findTestByIdOrThrow(testId));
     }

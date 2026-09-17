@@ -13,4 +13,7 @@ public interface StudentExamRepository extends MongoRepository<StudentExam, Stri
     // TO'G'RILANGAN QISM: Bitta talabaning bir nechta imtihoni bo'lishi mumkinligi uchun List qaytaradi
     List<StudentExam> findByStudentId(String studentId);
 
+    List<StudentExam> findByStudentIdIn(List<String> studentIds);
+
+    List<StudentExam> findByExamSessionIdIn(List<String> examSessionIds);
 }
