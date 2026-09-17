@@ -28,26 +28,20 @@
     </scm>
     <properties>
         <java.version>21</java.version>
-        <spring-boot.native-metadata.version>0.3.8</spring-boot.native-metadata.version>
     </properties>
     <dependencies>
-        <!-- MongoDB TO'G'RILANDI -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
-
-        <!-- WEB TO'G'RILANDI -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
         <!-- JWT -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
@@ -64,15 +58,13 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>0.11.5</version>
         </dependency>
-
         <!-- LOMBOK -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
-
-        <!-- TEST KUTUBXONALARI TO'G'RILANDI -->
+        <!-- TEST -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -84,12 +76,26 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- MANA SHU QISM METADATA XATOSINI TARTIBGA SOLADI -->
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+                <configuration>
+                    <metadataRepository>
+                        <enabled>true</enabled>
+                        <version>0.3.3</version> <!-- GraalVM 21 tushunadigan eski qoidalar bazasi -->
+                    </metadataRepository>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -128,5 +134,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
