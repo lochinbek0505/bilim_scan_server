@@ -12,5 +12,7 @@ public class ExamCreateDto {
     private Integer durationMinutes;
     private Integer questionCount; // Savollar soni
     private Integer maxAttempts;   // Urinishlar soni
+    private String oquvOyi;
+    private String oquvYili;
     private List<String> combinedTestIds;
 }

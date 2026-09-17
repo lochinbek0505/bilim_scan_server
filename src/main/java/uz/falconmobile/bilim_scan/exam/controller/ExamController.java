@@ -32,6 +32,12 @@ public class ExamController {
         return examService.getAllExamSessionsForAdmin();
     }
 
+    // O'qituvchi yoki Admin imtihon ochishi uchun
+    @PutMapping("/{id}")
+    public ExamSession updateExam(@PathVariable String id, @RequestBody ExamCreateDto dto) {
+        return examService.updateExam(id, dto);
+    }
+
 
     // O'qituvchi yoki Admin imtihon ochishi uchun
     @PostMapping("/create")

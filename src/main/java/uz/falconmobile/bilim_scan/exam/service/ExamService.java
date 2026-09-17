@@ -13,8 +13,10 @@ import uz.falconmobile.bilim_scan.exam.repository.ExamSessionRepository;
 import uz.falconmobile.bilim_scan.exam.repository.StudentExamRepository;
 import uz.falconmobile.bilim_scan.test.dto.TestOptionDto;
 import uz.falconmobile.bilim_scan.test.dto.TestQuestionResponseDto;
+import uz.falconmobile.bilim_scan.test.model.EduTest;
 import uz.falconmobile.bilim_scan.test.model.TestOption;
 import uz.falconmobile.bilim_scan.test.model.TestQuestion;
+import uz.falconmobile.bilim_scan.test.repository.EduTestRepository;
 import uz.falconmobile.bilim_scan.test.repository.TestQuestionRepository;
 
 import java.time.Instant;
@@ -29,9 +31,8 @@ public class ExamService {
     private final StudentExamRepository studentExamRepository;
     private final TestQuestionRepository testQuestionRepository;
     private final GuruhRepository guruhRepository;
+    private final EduTestRepository eduTestRepository;
 
-    // Barcha imtihonlarni olish
-// Talaba uchun faol va o'z guruhiga tegishli imtihonlar ro'yxatini shakllantirish
     public List<StudentAvailableExamDto> getAvailableExamsForStudent(String guruhId, String studentId) {
 
         // 1. Faol va faqat shu guruhga tegishli imtihonlarni bazadan olish
@@ -77,12 +78,24 @@ public class ExamService {
             session.setGuruh(guruhRepository.findById(dto.getGuruhId())
                     .orElseThrow(() -> new RuntimeException("Guruh topilmadi: " + dto.getGuruhId())));
         }
+        if (dto.getTestId() != null) {
+            EduTest test = eduTestRepository.findById(dto.getTestId())
+                    .orElseThrow(() -> new RuntimeException("Test topilmadi: " + dto.getTestId()));
+            session.setFanId(test.getFan().getId());
+        } else if (dto.getCombinedTestIds() != null && !dto.getCombinedTestIds().isEmpty()) {
+            EduTest firstTest = eduTestRepository.findById(dto.getCombinedTestIds().get(0))
+                    .orElseThrow(() -> new RuntimeException("Birinchi test topilmadi: " + dto.getCombinedTestIds().get(0)));
+            session.setFanId(firstTest.getFan().getId());
+
+        }
         session.setName(dto.getName());
         session.setTest(dto.getTestId());
         session.setDurationMinutes(dto.getDurationMinutes());
         session.setQuestionCount(dto.getQuestionCount() != null ? dto.getQuestionCount() : 15);
         session.setMaxAttempts(dto.getMaxAttempts() != null ? dto.getMaxAttempts() : 1);
         session.setStartTime(Instant.now());
+        session.setOquv_oyi(dto.getOquvOyi());
+        session.setOquv_yili(dto.getOquvYili());
         session.setCombinedTestIds(dto.getCombinedTestIds());
         return examSessionRepository.save(session);
     }
@@ -323,6 +336,63 @@ public class ExamService {
                 .topicMastery(latestExam.getTopicMastery())
                 .questions(questionDtos)
                 .build();
+    }
+
+    // Imtihonni yangilash (Update)
+    public ExamSession updateExam(String examSessionId, ExamCreateDto dto) {
+        ExamSession session = examSessionRepository.findById(examSessionId)
+                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
+
+        // Agar guruh id berilgan bo'lsa va u eski guruhdan farq qilsa, yangilaymiz
+        if (dto.getGuruhId() != null) {
+            session.setGuruh(guruhRepository.findById(dto.getGuruhId())
+                    .orElseThrow(() -> new RuntimeException("Guruh topilmadi: " + dto.getGuruhId())));
+        }
+
+        // Qolgan maydonlarni null emasligini tekshirib yangilaymiz
+        if (dto.getName() != null && !dto.getName().isBlank()) {
+            session.setName(dto.getName());
+        }
+
+        if (dto.getTestId() != null && !dto.getTestId().isBlank()) {
+            session.setTest(dto.getTestId());
+        }
+
+        if (dto.getDurationMinutes() > 0) {
+            session.setDurationMinutes(dto.getDurationMinutes());
+        }
+
+        if (dto.getQuestionCount() != null && dto.getQuestionCount() > 0) {
+            session.setQuestionCount(dto.getQuestionCount());
+        }
+
+        if (dto.getMaxAttempts() != null && dto.getMaxAttempts() > 0) {
+            session.setMaxAttempts(dto.getMaxAttempts());
+        }
+
+        if (dto.getCombinedTestIds() != null) {
+            session.setCombinedTestIds(dto.getCombinedTestIds());
+        }
+
+        if (dto.getOquvOyi() != null && !dto.getOquvOyi().isBlank()) {
+            session.setOquv_oyi(dto.getOquvOyi());
+        }
+        if (dto.getOquvYili() != null && !dto.getOquvYili().isBlank()) {
+            session.setOquv_yili(dto.getOquvYili());
+        }
+
+        if (dto.getTestId() != null) {
+            EduTest test = eduTestRepository.findById(dto.getTestId())
+                    .orElseThrow(() -> new RuntimeException("Test topilmadi: " + dto.getTestId()));
+            session.setFanId(test.getFan().getId());
+        } else if (dto.getCombinedTestIds() != null && !dto.getCombinedTestIds().isEmpty()) {
+            EduTest firstTest = eduTestRepository.findById(dto.getCombinedTestIds().get(0))
+                    .orElseThrow(() -> new RuntimeException("Birinchi test topilmadi: " + dto.getCombinedTestIds().get(0)));
+            session.setFanId(firstTest.getFan().getId());
+
+        }
+
+        return examSessionRepository.save(session);
     }
 
     // Imtihonni nofaol (disable) holatga o'tkazish

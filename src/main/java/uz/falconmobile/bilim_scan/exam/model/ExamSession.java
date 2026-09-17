@@ -23,7 +23,9 @@ public class ExamSession {
     private Integer questionCount; // Imtihondagi savollar soni
     private Integer maxAttempts;   // Necha marta urinish mumkinligi
     private boolean isActive = true;
-
+    private String oquv_oyi;
+    private String oquv_yili;
+    private String fanId;
     // Yakuniy imtihon uchun (bir nechta testlarni birlashtirish)
     private List<String> combinedTestIds;
 }

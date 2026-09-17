@@ -1,6 +1,7 @@
 package uz.falconmobile.bilim_scan.test.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.falconmobile.bilim_scan.test.dto.TestQuestionRequestDto;
@@ -79,8 +80,8 @@ public class TestController {
     }
 
     @DeleteMapping("/{testId}/questions/{questionId}")
-    public String deleteQuestion(@PathVariable String testId, @PathVariable String questionId) {
+    public ResponseEntity<Boolean> deleteQuestion(@PathVariable String testId, @PathVariable String questionId) {
         testService.deleteQuestion(testId, questionId);
-        return "Test savoli o'chirildi";
+        return ResponseEntity.ok(true);
     }
 }
