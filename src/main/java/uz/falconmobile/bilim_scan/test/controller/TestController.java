@@ -42,9 +42,9 @@ public class TestController {
     }
 
     @DeleteMapping("/{testId}")
-    public String deleteTest(@PathVariable String testId) {
+    public ResponseEntity<Boolean> deleteTest(@PathVariable String testId) {
         testService.deleteTest(testId);
-        return "Test o'chirildi";
+        return ResponseEntity.ok(true);
     }
 
     @GetMapping("/{testId}/questions")

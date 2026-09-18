@@ -1,6 +1,7 @@
 package uz.falconmobile.bilim_scan.eduplan.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.falconmobile.bilim_scan.eduplan.dto.EduPlanRequestDto;
@@ -39,9 +40,9 @@ public class EduPlanController {
     }
 
     @DeleteMapping("/{planId}")
-    public String deletePlan(@PathVariable String planId) {
+    public ResponseEntity<Boolean> deletePlan(@PathVariable String planId) {
         eduPlanService.deletePlan(planId);
-        return "Plan o'chirildi";
+        return ResponseEntity.ok(true);
     }
 
     @GetMapping("/{planId}/topics")
@@ -77,8 +78,8 @@ public class EduPlanController {
     }
 
     @DeleteMapping("/{planId}/topics/{topicId}")
-    public String deleteTopic(@PathVariable String planId, @PathVariable String topicId) {
+    public ResponseEntity<Boolean> deleteTopic(@PathVariable String planId, @PathVariable String topicId) {
         eduPlanService.deleteTopic(planId, topicId);
-        return "Mavzu o'chirildi";
+        return ResponseEntity.ok(true);
     }
 }

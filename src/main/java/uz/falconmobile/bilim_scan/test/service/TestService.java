@@ -73,8 +73,11 @@ public class TestService {
         test.setKafedra(findKafedraByIdOrThrow(dto.getKafedraId()));
         test.setOquvReja(findEduPlanByIdOrThrow(dto.getEduPlanId()));
         test.setUpdateAt(Instant.now());
-        test.setOquvYili(test.getOquvYili());
-        test.setOquvOyi(test.getOquvOyi());
+
+        // TO'G'RILANDI: O'quv rejasidan yangi o'quv yilini olish kerak
+        test.setOquvYili(test.getOquvReja().getOquvYili());
+        test.setOquvOyi(test.getOquvYili()); // createTest da qanday yozilgan bo'lsa shunday qoldirildi
+
         return toTestResponse(eduTestRepository.save(test));
     }
 
@@ -153,6 +156,10 @@ public class TestService {
         TestQuestion question = findQuestionByIdOrThrow(testId, questionId);
         applyQuestionDtoBasic(question, dto);
 
+        // TO'G'RILANDI: Savolning TR (tartib raqami) o'zgargan bo'lishi mumkin.
+        // Relation (bog'liqlik)larni izlashdan oldin yangi TR larni bazaga saqlab olamiz.
+        question = testQuestionRepository.save(question);
+
         Map<Integer, String> trToIdMap = buildTrToIdMap(testId);
         question.setRelatedQuestionIds(resolveTrsToIds(dto.getRelatedQuestionTrs(), trToIdMap, question.getTr()));
 
@@ -164,15 +171,14 @@ public class TestService {
         TestQuestion question = findQuestionByIdOrThrow(testId, questionId);
         testQuestionRepository.deleteById(question.getId());
     }
-
     // Savolning bog'liqlikdan (related) tashqari barcha ma'lumotlarini to'ldirish
     private void applyQuestionDtoBasic(TestQuestion question, TestQuestionRequestDto dto) {
         question.setTitle(requireNonBlank(dto.getTitle(), "Savol sarlavhasi bo'sh bo'lishi mumkin emas"));
-        if(eduPlanTopicRepository.existsById(dto.getTopicId()) == false){
-            throw new RuntimeException("Savol mavzusi topilmadi: " + dto.getTopicId());
-        }else{
-            question.setMavzu(eduPlanTopicRepository.findById(dto.getTopicId()).get());
-        }
+
+        String topicId = requireNonBlank(dto.getTopicId(), "Savol mavzusi (topicId) bo'sh bo'lishi mumkin emas");
+        question.setMavzu(eduPlanTopicRepository.findById(topicId)
+                .orElseThrow(() -> new RuntimeException("Savol mavzusi topilmadi: " + topicId)));
+
         QuestionType type = requireType(dto.getType());
         question.setType(type);
         question.setTr(requirePositive(dto.getTr(), "Savol tartib raqami (tr) noto'g'ri"));

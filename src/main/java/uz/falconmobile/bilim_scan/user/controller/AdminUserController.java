@@ -1,6 +1,7 @@
 package uz.falconmobile.bilim_scan.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.falconmobile.bilim_scan.user.dto.UserCreateDto;
@@ -39,8 +40,8 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
-    public String deleteUser(@PathVariable String id) {
+    public ResponseEntity<Boolean> deleteUser(@PathVariable String id) {
         userService.deleteUser(id);
-        return "Foydalanuvchi o'chirildi!";
+        return ResponseEntity.ok(true);
     }
 }

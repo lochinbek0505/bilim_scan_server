@@ -73,8 +73,8 @@ public class ExamController {
     }
 
     @DeleteMapping("/{examSessionId}")
-    public String deleteExamSession(@PathVariable String examSessionId) {
+    public ResponseEntity<Boolean> deleteExamSession(@PathVariable String examSessionId) {
         examService.deleteExamSession(examSessionId);
-        return "Imtihon sessiyasi o'chirildi";
+        return ResponseEntity.ok(true);
     }
 }

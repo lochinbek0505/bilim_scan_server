@@ -1,6 +1,7 @@
 package uz.falconmobile.bilim_scan.catalog.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.falconmobile.bilim_scan.catalog.dto.CatalogItemRequestDto;
@@ -38,8 +39,8 @@ public class GuruhController {
     }
 
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable String id) {
+    public ResponseEntity<Boolean> delete(@PathVariable String id) {
         guruhService.delete(id);
-        return "Guruh o'chirildi";
+        return ResponseEntity.ok(true);
     }
 }

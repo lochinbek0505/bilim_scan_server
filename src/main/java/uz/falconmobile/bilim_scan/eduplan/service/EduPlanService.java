@@ -75,16 +75,18 @@ public class EduPlanService {
         plan.setOquvYili(requireNonBlank(dto.getOquvYili(), "O'quv yili bo'sh bo'lishi mumkin emas"));
         plan.setUpdateAt(Instant.now());
 
-        if (kafedraRepository.existsById(dto.getKafedraId()) || dto.getKafedraId() == null || dto.getKafedraId().isBlank()) {
-            throw new RuntimeException("Kafedra nomi allaqachon mavjud: " + dto.getName());
+        // Kafedra tekshiruvi va yangilash
+        if (dto.getKafedraId() == null || dto.getKafedraId().isBlank()) {
+            throw new RuntimeException("Kafedra ID bo'sh bo'lishi mumkin emas");
         } else {
             Kafedra kafedra = kafedraRepository.findById(dto.getKafedraId())
                     .orElseThrow(() -> new RuntimeException("Kafedra topilmadi: " + dto.getKafedraId()));
             plan.setKafedra(kafedra);
         }
 
-        if (fanRepository.existsById(dto.getFanId()) || dto.getFanId() == null || dto.getFanId().isBlank()) {
-            throw new RuntimeException("Fan nomi allaqachon mavjud: " + dto.getName());
+        // Fan tekshiruvi va yangilash
+        if (dto.getFanId() == null || dto.getFanId().isBlank()) {
+            throw new RuntimeException("Fan ID bo'sh bo'lishi mumkin emas");
         } else {
             Fan fan = fanRepository.findById(dto.getFanId())
                     .orElseThrow(() -> new RuntimeException("Fan topilmadi: " + dto.getFanId()));
@@ -93,7 +95,6 @@ public class EduPlanService {
 
         return toPlanResponse(eduPlanRepository.save(plan));
     }
-
     public void deletePlan(String planId) {
         findPlanByIdOrThrow(planId);
         eduPlanTopicRepository.deleteByPlanId(planId);
