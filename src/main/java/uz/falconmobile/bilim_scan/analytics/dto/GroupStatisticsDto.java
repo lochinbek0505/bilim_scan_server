@@ -10,6 +10,7 @@ public class GroupStatisticsDto {
     private String guruhId;
     private Integer totalStudents;
     private Double overallAverage; // Guruhning umumiy o'zlashtirishi
+    private Integer totalSuspiciousExams; // Guruhdagi jami shubhali testlar soni
     private List<SubjectStatsDto> subjectStats;
 
     @Data
@@ -20,5 +21,6 @@ public class GroupStatisticsDto {
         private Integer masteredCount;     // 80-100% olganlar soni
         private Integer satisfactoryCount; // 60-80% olganlar soni
         private Integer failedCount;       // 60% dan pastlar soni
+        private Integer suspiciousCount;   // Shu fandan nechta shubhali urinish bo'ldi?
     }
 }

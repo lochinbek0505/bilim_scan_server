@@ -25,6 +25,8 @@ public class GlobalStatisticsDto {
     // Agar umumiy yoki bosqich bo'lsa, fanlar kesimidagi reyting
     private List<GroupStatisticsDto.SubjectStatsDto> subjectPerformances;
 
+    private Integer totalSuspiciousExams; // Bosqich/Litsey bo'yicha jami shubhali holatlar
+
     @Data
     @Builder
     public static class TimeDynamicDto {

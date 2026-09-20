@@ -87,13 +87,18 @@ public class AnalyticsService {
                         subjectTotal += currentPercentage;
 
                         ExamSession s = examSessionRepository.findById(exam.getExamSessionId()).orElse(null);
-
                         examDtos.add(StudentMonitoringDto.ExamResultDto.builder()
                                 .examSessionId(exam.getExamSessionId())
-                                .examName(s != null && s.getName() != null ? s.getName() : "Noma'lum imtihon")
+                                .examName(s != null ? s.getName() : "Noma'lum imtihon")
                                 .date(exam.getFinishedAt())
                                 .percentage(currentPercentage)
                                 .masteryLevel(exam.getMasteryLevel() != null ? exam.getMasteryLevel() : MasteryLevel.FAILED)
+
+                                .isSuspicious(exam.getIsSuspicious())
+                                .suspicionReason(exam.getSuspicionReason())
+                                .timeTakenSeconds(exam.getTimeTakenSeconds())
+                                // -----------------------------
+
                                 .build());
                     }
 
@@ -192,6 +197,7 @@ public class AnalyticsService {
 
                 subjectStatsMap.putIfAbsent(subjectName, GroupStatisticsDto.SubjectStatsDto.builder()
                         .subjectName(subjectName).averagePercentage(0.0)
+                        .suspiciousCount(0) // <-- YANGI
                         .masteredCount(0).satisfactoryCount(0).failedCount(0).build());
 
                 GroupStatisticsDto.SubjectStatsDto stats = subjectStatsMap.get(subjectName);
@@ -200,6 +206,11 @@ public class AnalyticsService {
                 if (currentPercentage >= 80.0) stats.setMasteredCount(stats.getMasteredCount() + 1);
                 else if (currentPercentage >= 60.0) stats.setSatisfactoryCount(stats.getSatisfactoryCount() + 1);
                 else stats.setFailedCount(stats.getFailedCount() + 1);
+
+                if (Boolean.TRUE.equals(exam.getIsSuspicious())) {
+                    stats.setSuspiciousCount(stats.getSuspiciousCount() + 1);
+                }
+
             }
         }
 

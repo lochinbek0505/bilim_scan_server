@@ -15,6 +15,8 @@ public class TestQuestionResponseDto {
     private String title;
     private EduPlanTopic mavzu;
     private QuestionType type;
+    private Double minimumTime;
+
     private List<String> relatedQuestionIds;
     private List<TestOptionDto> options;
 }

@@ -24,7 +24,14 @@ public class StudentExamSubmitResponseDto {
     private Double percentage;
     private MasteryLevel masteryLevel;
     private Map<String, Boolean> topicMastery;
-    
+
+    // --- YANGI QO'SHILGAN QISM (Shubhali holat xabarlari) ---
+    private Boolean isSuspicious;     // Natija shubhalimi? (true/false)
+    private String suspicionReason;   // Nima sababdan shubhali? (Masalan: "Tavakkal qilingan")
+    private Long timeTakenSeconds;    // Testga ketgan umumiy vaqt (sekundda)
+
+    // ID'lar ro'yxati o'rniga to'liq savollar obyekti
+
     // ID'lar ro'yxati o'rniga to'liq savollar obyekti
     private List<TestQuestionResponseDto> questions; 
 }

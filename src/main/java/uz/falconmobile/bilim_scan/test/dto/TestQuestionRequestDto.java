@@ -11,6 +11,7 @@ public class TestQuestionRequestDto {
     private String title;
     private String topicId;
     private QuestionType type;
+    private Double minimumTime;
     private List<Integer> relatedQuestionTrs; // ID lar emas, TR lar keladi
     private List<TestOptionDto> options;
 }

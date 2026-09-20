@@ -17,8 +17,13 @@ public class StudentExam {
     private Instant startedAt;
     private Instant finishedAt;
 
-    private List<String> assignedQuestionIds; // O'quvchiga tushgan random savollar
+    private List<String> assignedQuestionIds;
+    private Map<String, List<String>> presentedOptions;
 
+    // Shubha tekshiruvi natijalari
+    private Boolean isSuspicious; // Natija shubhalimi? (Vaqt yoki Tavakkal)
+    private String suspicionReason; // Nima sababdan shubhali?
+    private Long timeTakenSeconds; // Testni ishlashga ketgan umumiy vaqt (sekundda)
     // Natijalar
     private Integer totalQuestions;
     private Integer correctAnswers;

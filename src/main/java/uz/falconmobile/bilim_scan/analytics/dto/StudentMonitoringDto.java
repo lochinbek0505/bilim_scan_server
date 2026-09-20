@@ -47,5 +47,8 @@ public class StudentMonitoringDto {
         private Instant date;
         private Double percentage;
         private MasteryLevel masteryLevel;
+        private Boolean isSuspicious;      // Shu imtihon shubhalimi?
+        private String suspicionReason;    // Sababi (Tavakkal yoki Vaqt)
+        private Long timeTakenSeconds;     // Sarflangan vaqt
     }
 }

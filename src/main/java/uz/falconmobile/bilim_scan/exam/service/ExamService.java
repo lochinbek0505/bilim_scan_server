@@ -14,11 +14,13 @@ import uz.falconmobile.bilim_scan.exam.repository.StudentExamRepository;
 import uz.falconmobile.bilim_scan.test.dto.TestOptionDto;
 import uz.falconmobile.bilim_scan.test.dto.TestQuestionResponseDto;
 import uz.falconmobile.bilim_scan.test.model.EduTest;
+import uz.falconmobile.bilim_scan.test.model.QuestionType;
 import uz.falconmobile.bilim_scan.test.model.TestOption;
 import uz.falconmobile.bilim_scan.test.model.TestQuestion;
 import uz.falconmobile.bilim_scan.test.repository.EduTestRepository;
 import uz.falconmobile.bilim_scan.test.repository.TestQuestionRepository;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,21 +36,15 @@ public class ExamService {
     private final EduTestRepository eduTestRepository;
 
     public List<StudentAvailableExamDto> getAvailableExamsForStudent(String guruhId, String studentId) {
-
-        // 1. Faol va faqat shu guruhga tegishli imtihonlarni bazadan olish
         List<ExamSession> activeSessions = examSessionRepository.findByGuruhIdAndIsActiveTrue(guruhId);
-
         List<StudentAvailableExamDto> responseList = new ArrayList<>();
 
         for (ExamSession session : activeSessions) {
-            // 2. Talabaning ushbu imtihon sessiyasidagi avvalgi barcha urinishlarini topish
             List<StudentExam> attempts = studentExamRepository.findByExamSessionIdAndStudentId(session.getId(), studentId);
-
             int usedAttempts = attempts.size();
             int maxAttempts = session.getMaxAttempts() != null ? session.getMaxAttempts() : 1;
             int remainingAttempts = maxAttempts - usedAttempts;
 
-            // 3. DTO ga yig'ish (Guruh ma'lumotini to'liq jo'natish shart emas, faqat kerakli qismlarni yuboramiz)
             responseList.add(StudentAvailableExamDto.builder()
                     .id(session.getId())
                     .name(session.getName())
@@ -59,19 +55,16 @@ public class ExamService {
                     .questionCount(session.getQuestionCount())
                     .maxAttempts(maxAttempts)
                     .usedAttempts(usedAttempts)
-                    .remainingAttempts(Math.max(remainingAttempts, 0)) // Manfiy son bo'lib ketmasligi uchun
+                    .remainingAttempts(Math.max(remainingAttempts, 0))
                     .build());
         }
-
         return responseList;
     }
 
-    // Admin uchun barcha imtihonlarni (faol va nofaol) qaytarish
     public List<ExamSession> getAllExamSessionsForAdmin() {
         return examSessionRepository.findAll();
     }
 
-    // 1. Imtihon yaratish (Guruh va Testni biriktirish)
     public ExamSession createExam(ExamCreateDto dto) {
         ExamSession session = new ExamSession();
         if (dto.getGuruhId() != null) {
@@ -86,7 +79,6 @@ public class ExamService {
             EduTest firstTest = eduTestRepository.findById(dto.getCombinedTestIds().get(0))
                     .orElseThrow(() -> new RuntimeException("Birinchi test topilmadi: " + dto.getCombinedTestIds().get(0)));
             session.setFanId(firstTest.getFan().getId());
-
         }
         session.setName(dto.getName());
         session.setTest(dto.getTestId());
@@ -104,21 +96,14 @@ public class ExamService {
         ExamSession session = examSessionRepository.findById(examSessionId)
                 .orElseThrow(() -> new RuntimeException("Imtihon topilmadi"));
 
-        // Urinishlar sonini tekshirish
         List<StudentExam> previousAttempts = studentExamRepository.findByExamSessionIdAndStudentId(examSessionId, studentId);
         int currentAttempt = previousAttempts.size() + 1;
         if (currentAttempt > session.getMaxAttempts()) {
             throw new RuntimeException("Urinishlar soni tugagan (Maksimal: " + session.getMaxAttempts() + " marta)");
         }
 
-        // Agar combinedTestIds bo'lsa barcha testlardan savollar olinadi, aks holda bitta testdan
-        List<TestQuestion> allQuestions;
+        List<TestQuestion> allQuestions = new ArrayList<>();
         if (session.getCombinedTestIds() != null && !session.getCombinedTestIds().isEmpty()) {
-            // Buning uchun TestQuestionRepository da findByTestIdIn() yozishingiz kerak bo'ladi.
-            // allQuestions = testQuestionRepository.findByTestIdIn(session.getCombinedTestIds());
-
-            // Hozirgi imkoniyat bilan for orqali yig'ib oldik
-            allQuestions = new ArrayList<>();
             for (String tId : session.getCombinedTestIds()) {
                 allQuestions.addAll(testQuestionRepository.findByTestId(tId));
             }
@@ -130,19 +115,46 @@ public class ExamService {
             throw new RuntimeException("Testda savollar mavjud emas");
         }
 
-        // Savollarni random qilib yig'ish (Related logic bilan)
         List<TestQuestion> assignedQuestions = generateRandomQuestionsWithRelations(allQuestions, session.getQuestionCount());
         List<String> assignedIds = assignedQuestions.stream().map(TestQuestion::getId).toList();
+
+        // Variantlarni teng taqsimlash uchun 0, 1, 2, 3 indekslar aralashtiriladi
+        List<Integer> correctIndices = new ArrayList<>();
+        for (int i = 0; i < assignedQuestions.size(); i++) {
+            correctIndices.add(i % 4);
+        }
+        Collections.shuffle(correctIndices);
+
+        Map<String, List<String>> presentedOptionsMap = new HashMap<>();
+        List<TestQuestionResponseDto> questionDtos = new ArrayList<>();
+
+        for (int i = 0; i < assignedQuestions.size(); i++) {
+            TestQuestion q = assignedQuestions.get(i);
+            int targetCorrectIndex = correctIndices.get(i);
+
+            List<TestOptionDto> shuffledOptions = shuffleOptionsEvenly(q, targetCorrectIndex);
+            presentedOptionsMap.put(q.getId(), shuffledOptions.stream().map(TestOptionDto::getText).toList());
+
+            questionDtos.add(TestQuestionResponseDto.builder()
+                    .id(q.getId())
+                    .testId(q.getTestId())
+                    .title(q.getTitle())
+                    .mavzu(q.getMavzu())
+                    .type(q.getType())
+                    .relatedQuestionIds(q.getRelatedQuestionIds() == null ? Collections.emptyList() : q.getRelatedQuestionIds())
+                    .options(shuffledOptions)
+                    .build());
+        }
 
         StudentExam studentExam = new StudentExam();
         studentExam.setExamSessionId(examSessionId);
         studentExam.setStudentId(studentId);
         studentExam.setAssignedQuestionIds(assignedIds);
         studentExam.setStartedAt(Instant.now());
+        studentExam.setPresentedOptions(presentedOptionsMap);
 
         studentExam = studentExamRepository.save(studentExam);
 
-        // Talabaga yuborish uchun DTO ni yig'ish
         return StudentExamStartResponseDto.builder()
                 .id(studentExam.getId())
                 .studentExamId(studentExam.getId())
@@ -150,18 +162,172 @@ public class ExamService {
                 .startedAt(studentExam.getStartedAt())
                 .durationMinutes(session.getDurationMinutes())
                 .attemptNumber(currentAttempt)
-                .questions(assignedQuestions.stream().map(this::toQuestionResponseSafe).toList())
+                .questions(questionDtos)
                 .build();
     }
 
-    // Savollarni 2-3 ta bog'liq qilib random tanlash (TestQuestion obyektlarini qaytaradi)
+    public StudentExamSubmitResponseDto submitExam(String studentExamId, StudentAnswerSubmitDto dto) {
+        StudentExam studentExam = studentExamRepository.findById(studentExamId)
+                .orElseThrow(() -> new IllegalArgumentException("Imtihon topilmadi: " + studentExamId));
+
+        Instant finishedAt = Instant.now();
+        studentExam.setFinishedAt(finishedAt);
+
+        // Vaqtni hisoblash
+        long timeTakenSeconds = Duration.between(studentExam.getStartedAt(), finishedAt).getSeconds();
+        double totalMinimumTime = 0.0;
+
+        int correctAnswersCount = 0;
+        int totalQuestions = studentExam.getAssignedQuestionIds().size();
+
+        Map<String, TopicStats> topicStatsMap = new HashMap<>();
+
+        // Naqshni aniqlash uchun
+        int maxConsecutiveSameOption = 0;
+        int currentConsecutive = 1;
+        Integer lastSelectedOptionIndex = null;
+
+        for (String questionId : studentExam.getAssignedQuestionIds()) {
+            TestQuestion question = testQuestionRepository.findById(questionId).orElse(null);
+            if (question == null) continue;
+
+            // Minimum vaqtni qo'shish (standart 15 soniya)
+            totalMinimumTime += (question.getMinimumTime() != null && question.getMinimumTime() > 0) ? question.getMinimumTime() : 15.0;
+
+            String topicKey = (question.getMavzu() != null && question.getMavzu().getId() != null)
+                    ? question.getMavzu().getId()
+                    : "unknown_topic";
+
+            topicStatsMap.putIfAbsent(topicKey, new TopicStats());
+
+            List<String> studentAnswers = dto.getAnswers().getOrDefault(questionId, Collections.emptyList());
+            boolean isCorrect = checkAnswerIsCorrect(question, studentAnswers);
+
+            topicStatsMap.get(topicKey).total++;
+            if (isCorrect) {
+                correctAnswersCount++;
+                topicStatsMap.get(topicKey).correct++;
+            }
+
+            // Naqsh (Tavakkal) ni tekshirish
+            if (!studentAnswers.isEmpty() && question.getType() == QuestionType.SINGLE_CHOICE && studentExam.getPresentedOptions() != null) {
+                String selectedText = studentAnswers.get(0);
+                List<String> presented = studentExam.getPresentedOptions().get(questionId);
+
+                if (presented != null) {
+                    int selectedIndex = presented.indexOf(selectedText);
+                    if (selectedIndex != -1) {
+                        if (lastSelectedOptionIndex != null && lastSelectedOptionIndex == selectedIndex) {
+                            currentConsecutive++;
+                            if (currentConsecutive > maxConsecutiveSameOption) {
+                                maxConsecutiveSameOption = currentConsecutive;
+                            }
+                        } else {
+                            currentConsecutive = 1;
+                        }
+                        lastSelectedOptionIndex = selectedIndex;
+                    }
+                }
+            }
+        }
+
+        // Shubhalilikni baholash
+        boolean isSuspiciousTime = timeTakenSeconds <= totalMinimumTime;
+        boolean isSuspiciousPattern = maxConsecutiveSameOption >= 5;
+
+        studentExam.setTimeTakenSeconds(timeTakenSeconds);
+        studentExam.setIsSuspicious(isSuspiciousTime || isSuspiciousPattern);
+
+        List<String> suspicionReasons = new ArrayList<>();
+        if (isSuspiciousTime)
+            suspicionReasons.add("Minimal kutilgan vaqtdan tezroq ishlandi (" + timeTakenSeconds + " sek)");
+        if (isSuspiciousPattern)
+            suspicionReasons.add("Tavakkal ehtimoli: " + maxConsecutiveSameOption + " ta ketma-ket bir xil variant belgilangan");
+        studentExam.setSuspicionReason(String.join(". ", suspicionReasons));
+
+        // Natijalarni hisoblash
+        double percentage = ((double) correctAnswersCount / totalQuestions) * 100;
+        studentExam.setTotalQuestions(totalQuestions);
+        studentExam.setCorrectAnswers(correctAnswersCount);
+        studentExam.setPercentage(percentage);
+        studentExam.setMasteryLevel(calculateMasteryLevel(percentage));
+
+        Map<String, Boolean> topicMastery = new HashMap<>();
+        for (Map.Entry<String, TopicStats> entry : topicStatsMap.entrySet()) {
+            topicMastery.put(entry.getKey(), ((double) entry.getValue().correct / entry.getValue().total) * 100 >= 60.0);
+        }
+        studentExam.setTopicMastery(topicMastery);
+
+        studentExam = studentExamRepository.save(studentExam);
+        return buildSubmitResponse(studentExam);
+    }
+
+    public StudentExamSubmitResponseDto getExamResultBySessionAndStudent(String examSessionId, String studentId) {
+        List<StudentExam> attempts = studentExamRepository.findByExamSessionIdAndStudentId(examSessionId, studentId);
+        if (attempts.isEmpty()) {
+            throw new RuntimeException("Talabaning ushbu imtihon bo'yicha natijasi topilmadi");
+        }
+
+        StudentExam latestExam = attempts.stream()
+                .filter(exam -> exam.getFinishedAt() != null)
+                .max(Comparator.comparing(StudentExam::getFinishedAt))
+                .orElseThrow(() -> new RuntimeException("Yakunlangan imtihon topilmadi"));
+
+        return buildSubmitResponse(latestExam);
+    }
+
+    public ExamSession updateExam(String examSessionId, ExamCreateDto dto) {
+        ExamSession session = examSessionRepository.findById(examSessionId)
+                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
+
+        if (dto.getGuruhId() != null) {
+            session.setGuruh(guruhRepository.findById(dto.getGuruhId())
+                    .orElseThrow(() -> new RuntimeException("Guruh topilmadi: " + dto.getGuruhId())));
+        }
+        if (dto.getName() != null && !dto.getName().isBlank()) session.setName(dto.getName());
+        if (dto.getTestId() != null && !dto.getTestId().isBlank()) session.setTest(dto.getTestId());
+        if (dto.getDurationMinutes() > 0) session.setDurationMinutes(dto.getDurationMinutes());
+        if (dto.getQuestionCount() != null && dto.getQuestionCount() > 0) session.setQuestionCount(dto.getQuestionCount());
+        if (dto.getMaxAttempts() != null && dto.getMaxAttempts() > 0) session.setMaxAttempts(dto.getMaxAttempts());
+        if (dto.getCombinedTestIds() != null) session.setCombinedTestIds(dto.getCombinedTestIds());
+        if (dto.getOquvOyi() != null && !dto.getOquvOyi().isBlank()) session.setOquv_oyi(dto.getOquvOyi());
+        if (dto.getOquvYili() != null && !dto.getOquvYili().isBlank()) session.setOquv_yili(dto.getOquvYili());
+        if (dto.getTestId() != null) {
+            EduTest test = eduTestRepository.findById(dto.getTestId())
+                    .orElseThrow(() -> new RuntimeException("Test topilmadi: " + dto.getTestId()));
+            session.setFanId(test.getFan().getId());
+        } else if (dto.getCombinedTestIds() != null && !dto.getCombinedTestIds().isEmpty()) {
+            EduTest firstTest = eduTestRepository.findById(dto.getCombinedTestIds().get(0))
+                    .orElseThrow(() -> new RuntimeException("Birinchi test topilmadi: " + dto.getCombinedTestIds().get(0)));
+            session.setFanId(firstTest.getFan().getId());
+        }
+
+        return examSessionRepository.save(session);
+    }
+
+    public boolean disableExam(String examSessionId) {
+        ExamSession session = examSessionRepository.findById(examSessionId)
+                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
+        session.setActive(false);
+        examSessionRepository.save(session);
+        return true;
+    }
+
+    public boolean deleteExamSession(String examSessionId) {
+        ExamSession session = examSessionRepository.findById(examSessionId)
+                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
+        examSessionRepository.delete(session);
+        return true;
+    }
+
+    // --- YORDAMCHI METODLAR ---
+
     private List<TestQuestion> generateRandomQuestionsWithRelations(List<TestQuestion> allQuestions, int requiredCount) {
         Map<String, TestQuestion> questionMap = allQuestions.stream().collect(Collectors.toMap(TestQuestion::getId, q -> q));
         Set<String> selectedIds = new HashSet<>();
         List<TestQuestion> questionsPool = new ArrayList<>(allQuestions);
         Collections.shuffle(questionsPool);
 
-        // 1-qadam: Bog'liqligi bor savollar
         for (TestQuestion q : questionsPool) {
             if (q.getRelatedQuestionIds() != null && !q.getRelatedQuestionIds().isEmpty()) {
                 selectedIds.add(q.getId());
@@ -173,7 +339,6 @@ public class ExamService {
             }
         }
 
-        // 2-qadam: Qolganlari oddiy random
         for (TestQuestion q : questionsPool) {
             if (selectedIds.size() >= requiredCount) break;
             selectedIds.add(q.getId());
@@ -188,8 +353,46 @@ public class ExamService {
         return finalQuestions;
     }
 
-    // Talabaga ketadigan javobdan "isTrue" qismini olib tashlash
-// Talabaga ketadigan javobdan "isTrue" qismini olib tashlash
+    private List<TestOptionDto> shuffleOptionsEvenly(TestQuestion question, int targetCorrectIndex) {
+        if (question.getOptions() == null || question.getOptions().isEmpty() || question.getType() != QuestionType.SINGLE_CHOICE) {
+            if (question.getOptions() != null) {
+                List<TestOptionDto> opts = question.getOptions().stream().map(o -> {
+                    TestOptionDto dto = new TestOptionDto();
+                    dto.setText(o.getText());
+                    dto.setIsTrue(null);
+                    return dto;
+                }).collect(Collectors.toList());
+                Collections.shuffle(opts);
+                return opts;
+            }
+            return Collections.emptyList();
+        }
+
+        List<TestOption> correctOptions = question.getOptions().stream().filter(TestOption::isTrue).toList();
+        List<TestOption> incorrectOptions = question.getOptions().stream().filter(o -> !o.isTrue()).collect(Collectors.toList());
+        Collections.shuffle(incorrectOptions);
+
+        List<TestOptionDto> result = new ArrayList<>();
+        int totalSlots = question.getOptions().size();
+        int actualTargetIndex = Math.min(targetCorrectIndex, totalSlots - 1);
+
+        int incorrectIdx = 0;
+        for (int i = 0; i < totalSlots; i++) {
+            TestOptionDto dto = new TestOptionDto();
+            dto.setIsTrue(null);
+
+            if (i == actualTargetIndex && !correctOptions.isEmpty()) {
+                dto.setText(correctOptions.get(0).getText());
+            } else if (incorrectIdx < incorrectOptions.size()) {
+                dto.setText(incorrectOptions.get(incorrectIdx++).getText());
+            } else if (!correctOptions.isEmpty()) {
+                dto.setText(correctOptions.get(0).getText());
+            }
+            result.add(dto);
+        }
+        return result;
+    }
+
     private TestQuestionResponseDto toQuestionResponseSafe(TestQuestion question) {
         List<TestOptionDto> optionDtos = question.getOptions() == null
                 ? Collections.emptyList()
@@ -197,89 +400,34 @@ public class ExamService {
                 .map(option -> {
                     TestOptionDto dto = new TestOptionDto();
                     dto.setText(option.getText());
-                    dto.setIsTrue(null); // MUHIM: O'quvchiga to'g'ri javob ko'rinmasligi kerak
+                    dto.setIsTrue(null);
                     return dto;
                 })
                 .toList();
 
-        // EduPlanTopic obyektidan ismni xavfsiz ajratib olish
         EduPlanTopic mavzuName = (question.getMavzu() != null) ? question.getMavzu() : null;
 
         return TestQuestionResponseDto.builder()
                 .id(question.getId())
                 .testId(question.getTestId())
                 .title(question.getTitle())
-                .mavzu(mavzuName) // <-- To'g'rilangan joy
+                .mavzu(mavzuName)
                 .type(question.getType())
                 .relatedQuestionIds(question.getRelatedQuestionIds() == null ? Collections.emptyList() : question.getRelatedQuestionIds())
                 .options(optionDtos)
                 .build();
     }
 
-    public StudentExamSubmitResponseDto submitExam(String studentExamId, StudentAnswerSubmitDto dto) {
-
-        StudentExam studentExam = studentExamRepository.findById(studentExamId)
-                .orElseThrow(() -> new IllegalArgumentException("Imtihon topilmadi: " + studentExamId));
-
-        studentExam.setFinishedAt(Instant.now());
-
-        int correctAnswersCount = 0;
-        int totalQuestions = studentExam.getAssignedQuestionIds().size();
-
-        Map<String, TopicStats> topicStatsMap = new HashMap<>();
-
-        for (String questionId : studentExam.getAssignedQuestionIds()) {
-            TestQuestion question = testQuestionRepository.findById(questionId).orElse(null);
-            if (question == null) continue;
-
-            // Mavzu ID'sini olish (agar yo'q bo'lsa "unknown" deb olamiz)
-            String topicKey = (question.getMavzu() != null && question.getMavzu().getId() != null)
-                    ? question.getMavzu().getId()
-                    : "unknown_topic";
-
-            topicStatsMap.putIfAbsent(topicKey, new TopicStats());
-
-// ... (qolgan kodlar bir xil, faqat topicName o'rniga topicKey ishlatasiz)
-
-            topicStatsMap.putIfAbsent(topicKey, new TopicStats());
-
-            List<String> studentAnswers = dto.getAnswers().getOrDefault(questionId, Collections.emptyList());
-            boolean isCorrect = checkAnswerIsCorrect(question, studentAnswers);
-
-            topicStatsMap.get(topicKey).total++;
-            if (isCorrect) {
-                correctAnswersCount++;
-                topicStatsMap.get(topicKey).correct++;
-            }
-        }
-
-        double percentage = ((double) correctAnswersCount / totalQuestions) * 100;
-        studentExam.setTotalQuestions(totalQuestions);
-        studentExam.setCorrectAnswers(correctAnswersCount);
-        studentExam.setPercentage(percentage);
-        studentExam.setMasteryLevel(calculateMasteryLevel(percentage));
-
-        Map<String, Boolean> topicMastery = new HashMap<>();
-        for (Map.Entry<String, TopicStats> entry : topicStatsMap.entrySet()) {
-            topicMastery.put(entry.getKey(), ((double) entry.getValue().correct / entry.getValue().total) * 100 >= 60.0);
-        }
-        studentExam.setTopicMastery(topicMastery);
-
-        // Natijani bazaga saqlaymiz
-        studentExam = studentExamRepository.save(studentExam);
-
-        // Bazadan savollarni to'liq chaqirib olish
+    private StudentExamSubmitResponseDto buildSubmitResponse(StudentExam studentExam) {
         List<TestQuestion> fullQuestions = studentExam.getAssignedQuestionIds().stream()
                 .map(id -> testQuestionRepository.findById(id).orElse(null))
                 .filter(Objects::nonNull)
                 .toList();
 
-        // Savollarni DTO ga o'girish
         List<TestQuestionResponseDto> questionDtos = fullQuestions.stream()
                 .map(this::toQuestionResponseSafe)
                 .toList();
 
-        // Obyektni Response DTO ko'rinishida yig'ib qaytarish
         return StudentExamSubmitResponseDto.builder()
                 .id(studentExam.getId())
                 .examSessionId(studentExam.getExamSessionId())
@@ -292,148 +440,26 @@ public class ExamService {
                 .masteryLevel(studentExam.getMasteryLevel())
                 .topicMastery(studentExam.getTopicMastery())
                 .questions(questionDtos)
+                .isSuspicious(studentExam.getIsSuspicious())           // <-- Shu qatorlarni qo'shing
+                .suspicionReason(studentExam.getSuspicionReason())     // <--
+                .timeTakenSeconds(studentExam.getTimeTakenSeconds())   //
                 .build();
-    }
-
-    // Talabaning ma'lum bir sessiyadagi (eng oxirgi) natijasini to'liq savollari bilan olish
-    public StudentExamSubmitResponseDto getExamResultBySessionAndStudent(String examSessionId, String studentId) {
-
-        // Talabaning ushbu sessiyadagi barcha urinishlarini olamiz
-        List<StudentExam> attempts = studentExamRepository.findByExamSessionIdAndStudentId(examSessionId, studentId);
-
-        if (attempts.isEmpty()) {
-            throw new RuntimeException("Talabaning ushbu imtihon bo'yicha natijasi topilmadi");
-        }
-
-        // Yakunlangan (finishedAt null bo'lmagan) urinishlar ichidan eng oxirgisini ajratib olamiz
-        StudentExam latestExam = attempts.stream()
-                .filter(exam -> exam.getFinishedAt() != null)
-                .max(Comparator.comparing(StudentExam::getFinishedAt))
-                .orElseThrow(() -> new RuntimeException("Yakunlangan imtihon topilmadi"));
-
-        // Bazadan savollarni to'liq chaqirib olish
-        List<TestQuestion> fullQuestions = latestExam.getAssignedQuestionIds().stream()
-                .map(id -> testQuestionRepository.findById(id).orElse(null))
-                .filter(Objects::nonNull)
-                .toList();
-
-        // Savollarni DTO ga o'girish
-        List<TestQuestionResponseDto> questionDtos = fullQuestions.stream()
-                .map(this::toQuestionResponseSafe)
-                .toList();
-
-        // Submit bilan bir xil DTO ni yig'ib qaytarish
-        return StudentExamSubmitResponseDto.builder()
-                .id(latestExam.getId())
-                .examSessionId(latestExam.getExamSessionId())
-                .studentId(latestExam.getStudentId())
-                .startedAt(latestExam.getStartedAt())
-                .finishedAt(latestExam.getFinishedAt())
-                .totalQuestions(latestExam.getTotalQuestions())
-                .correctAnswers(latestExam.getCorrectAnswers())
-                .percentage(latestExam.getPercentage())
-                .masteryLevel(latestExam.getMasteryLevel())
-                .topicMastery(latestExam.getTopicMastery())
-                .questions(questionDtos)
-                .build();
-    }
-
-    // Imtihonni yangilash (Update)
-    public ExamSession updateExam(String examSessionId, ExamCreateDto dto) {
-        ExamSession session = examSessionRepository.findById(examSessionId)
-                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
-
-        // Agar guruh id berilgan bo'lsa va u eski guruhdan farq qilsa, yangilaymiz
-        if (dto.getGuruhId() != null) {
-            session.setGuruh(guruhRepository.findById(dto.getGuruhId())
-                    .orElseThrow(() -> new RuntimeException("Guruh topilmadi: " + dto.getGuruhId())));
-        }
-
-        // Qolgan maydonlarni null emasligini tekshirib yangilaymiz
-        if (dto.getName() != null && !dto.getName().isBlank()) {
-            session.setName(dto.getName());
-        }
-
-        if (dto.getTestId() != null && !dto.getTestId().isBlank()) {
-            session.setTest(dto.getTestId());
-        }
-
-        if (dto.getDurationMinutes() > 0) {
-            session.setDurationMinutes(dto.getDurationMinutes());
-        }
-
-        if (dto.getQuestionCount() != null && dto.getQuestionCount() > 0) {
-            session.setQuestionCount(dto.getQuestionCount());
-        }
-
-        if (dto.getMaxAttempts() != null && dto.getMaxAttempts() > 0) {
-            session.setMaxAttempts(dto.getMaxAttempts());
-        }
-
-        if (dto.getCombinedTestIds() != null) {
-            session.setCombinedTestIds(dto.getCombinedTestIds());
-        }
-
-        if (dto.getOquvOyi() != null && !dto.getOquvOyi().isBlank()) {
-            session.setOquv_oyi(dto.getOquvOyi());
-        }
-        if (dto.getOquvYili() != null && !dto.getOquvYili().isBlank()) {
-            session.setOquv_yili(dto.getOquvYili());
-        }
-
-        if (dto.getTestId() != null) {
-            EduTest test = eduTestRepository.findById(dto.getTestId())
-                    .orElseThrow(() -> new RuntimeException("Test topilmadi: " + dto.getTestId()));
-            session.setFanId(test.getFan().getId());
-        } else if (dto.getCombinedTestIds() != null && !dto.getCombinedTestIds().isEmpty()) {
-            EduTest firstTest = eduTestRepository.findById(dto.getCombinedTestIds().get(0))
-                    .orElseThrow(() -> new RuntimeException("Birinchi test topilmadi: " + dto.getCombinedTestIds().get(0)));
-            session.setFanId(firstTest.getFan().getId());
-
-        }
-
-        return examSessionRepository.save(session);
-    }
-
-    // Imtihonni nofaol (disable) holatga o'tkazish
-    public boolean disableExam(String examSessionId) {
-        ExamSession session = examSessionRepository.findById(examSessionId)
-                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
-
-        session.setActive(false); // isActive holatini false qilamiz
-        examSessionRepository.save(session);
-        return true;
-    }
-
-    public boolean deleteExamSession(String examSessionId) {
-        ExamSession session = examSessionRepository.findById(examSessionId)
-                .orElseThrow(() -> new RuntimeException("Imtihon topilmadi: " + examSessionId));
-        examSessionRepository.delete(session);
-        return true;
     }
 
     private boolean checkAnswerIsCorrect(TestQuestion question, List<String> studentAnswers) {
-        // Savol variantlari ichidan isTrue qiymati true bo'lganlarini ajratamiz
         List<String> correctOptions = question.getOptions().stream()
                 .filter(TestOption::isTrue)
                 .map(TestOption::getText)
                 .toList();
-
-        // Talaba belgilagan javoblar bilan to'g'ri javoblar ro'yxati aynan mos kelishini tekshiramiz
         return correctOptions.size() == studentAnswers.size() && correctOptions.containsAll(studentAnswers);
     }
 
     private MasteryLevel calculateMasteryLevel(double percentage) {
-        if (percentage < 60.0) {
-            return MasteryLevel.FAILED;
-        } else if (percentage < 80.0) {
-            return MasteryLevel.SATISFACTORY;
-        } else {
-            return MasteryLevel.MASTERED;
-        }
+        if (percentage < 60.0) return MasteryLevel.FAILED;
+        else if (percentage < 80.0) return MasteryLevel.SATISFACTORY;
+        else return MasteryLevel.MASTERED;
     }
 
-    // Mavzular bo'yicha yordamchi klass
     private static class TopicStats {
         int total = 0;
         int correct = 0;

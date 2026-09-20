@@ -31,6 +31,7 @@ public class TestService {
     private final KafedraRepository kafedraRepository;
     private final EduPlanRepository eduPlanRepository;
     private final EduPlanTopicRepository eduPlanTopicRepository;
+
     public List<TestResponseDto> getAllTests(String fanId, String kafedraId) {
         List<EduTest> tests;
 
@@ -48,6 +49,7 @@ public class TestService {
                 .map(this::toTestResponse)
                 .toList();
     }
+
     public TestResponseDto getTestById(String testId) {
         return toTestResponse(findTestByIdOrThrow(testId));
     }
@@ -104,6 +106,7 @@ public class TestService {
         findTestByIdOrThrow(testId);
         TestQuestion question = new TestQuestion();
         question.setTestId(testId);
+
         applyQuestionDtoBasic(question, dto);
 
         // Avval bazaga saqlab olib, ID generatsiya qilamiz
@@ -171,6 +174,7 @@ public class TestService {
         TestQuestion question = findQuestionByIdOrThrow(testId, questionId);
         testQuestionRepository.deleteById(question.getId());
     }
+
     // Savolning bog'liqlikdan (related) tashqari barcha ma'lumotlarini to'ldirish
     private void applyQuestionDtoBasic(TestQuestion question, TestQuestionRequestDto dto) {
         question.setTitle(requireNonBlank(dto.getTitle(), "Savol sarlavhasi bo'sh bo'lishi mumkin emas"));
@@ -178,7 +182,7 @@ public class TestService {
         String topicId = requireNonBlank(dto.getTopicId(), "Savol mavzusi (topicId) bo'sh bo'lishi mumkin emas");
         question.setMavzu(eduPlanTopicRepository.findById(topicId)
                 .orElseThrow(() -> new RuntimeException("Savol mavzusi topilmadi: " + topicId)));
-
+        question.setMinimumTime(dto.getMinimumTime());
         QuestionType type = requireType(dto.getType());
         question.setType(type);
         question.setTr(requirePositive(dto.getTr(), "Savol tartib raqami (tr) noto'g'ri"));
@@ -247,6 +251,7 @@ public class TestService {
     }
 
     private TestQuestionResponseDto toQuestionResponse(TestQuestion question) {
+
         List<TestOptionDto> optionDtos = question.getOptions() == null
                 ? Collections.emptyList()
                 : question.getOptions().stream()
@@ -257,13 +262,14 @@ public class TestService {
                     return dto;
                 })
                 .toList();
+
         return TestQuestionResponseDto.builder()
                 .id(question.getId())
                 .testId(question.getTestId())
                 .title(question.getTitle())
                 .mavzu(question.getMavzu())
                 .type(question.getType())
-                // Bazada saqlanuvchi ID lar response sifatida qaytadi
+                .minimumTime(question.getMinimumTime())
                 .relatedQuestionIds(question.getRelatedQuestionIds() == null ? Collections.emptyList() : question.getRelatedQuestionIds())
                 .options(optionDtos)
                 .build();

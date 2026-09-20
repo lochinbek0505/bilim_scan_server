@@ -10,6 +10,7 @@ import java.util.List;
 @Data
 @Document(collection = "test_questions")
 public class TestQuestion {
+
     @Id
     private String id;
     private int tr;
@@ -17,6 +18,7 @@ public class TestQuestion {
     private String title;
     private EduPlanTopic mavzu;
     private QuestionType type;
+    private Double minimumTime;
     private List<String> relatedQuestionIds;
     private List<TestOption> options;
 }
