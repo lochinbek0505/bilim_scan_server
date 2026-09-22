@@ -174,7 +174,6 @@ public class ExamService {
         studentExam.setFinishedAt(finishedAt);
 
         long timeTakenSeconds = Duration.between(studentExam.getStartedAt(), finishedAt).getSeconds();
-        double totalMinimumTime = 0.0;
 
         int correctAnswersCount = 0;
         int totalQuestions = studentExam.getAssignedQuestionIds().size();
@@ -185,15 +184,13 @@ public class ExamService {
         int currentConsecutive = 1;
         Integer lastSelectedOptionIndex = null;
 
-        // YANGLIK: Savollarning to'g'ri/xato holatini va bog'liqliklarini saqlab borish
+        // Savollarning to'g'ri/xato holatini va bog'liqliklarini saqlab borish
         Map<String, Boolean> correctnessMap = new HashMap<>();
         Map<String, List<String>> questionRelationsMap = new HashMap<>();
 
         for (String questionId : studentExam.getAssignedQuestionIds()) {
             TestQuestion question = testQuestionRepository.findById(questionId).orElse(null);
             if (question == null) continue;
-
-            totalMinimumTime += (question.getMinimumTime() != null && question.getMinimumTime() > 0) ? question.getMinimumTime() : 15.0;
 
             String topicKey = (question.getMavzu() != null && question.getMavzu().getId() != null)
                     ? question.getMavzu().getId()
@@ -237,7 +234,7 @@ public class ExamService {
             }
         }
 
-        // YANGLIK: Bog'liq savollardagi shubhani tekshirish
+        // Bog'liq savollardagi shubhani tekshirish
         boolean isSuspiciousRelation = false;
         for (Map.Entry<String, List<String>> entry : questionRelationsMap.entrySet()) {
             String mainQuestionId = entry.getKey();
@@ -256,16 +253,14 @@ public class ExamService {
             if (isSuspiciousRelation) break;
         }
 
-        boolean isSuspiciousTime = timeTakenSeconds <= totalMinimumTime;
         boolean isSuspiciousPattern = maxConsecutiveSameOption >= 5;
 
         studentExam.setTimeTakenSeconds(timeTakenSeconds);
-        // YANGLIK: Relation flag qo'shildi
-        studentExam.setIsSuspicious(isSuspiciousTime || isSuspiciousPattern || isSuspiciousRelation);
+        // Vaqtga oid tekshiruv (isSuspiciousTime) olib tashlandi
+        studentExam.setIsSuspicious(isSuspiciousPattern || isSuspiciousRelation);
 
         List<String> suspicionReasons = new ArrayList<>();
-        if (isSuspiciousTime)
-            suspicionReasons.add("Minimal kutilgan vaqtdan tezroq ishlandi (" + timeTakenSeconds + " sek)");
+
         if (isSuspiciousPattern)
             suspicionReasons.add("Tavakkal ehtimoli: " + maxConsecutiveSameOption + " ta ketma-ket bir xil variant belgilangan");
         if (isSuspiciousRelation)
@@ -288,7 +283,6 @@ public class ExamService {
         studentExam = studentExamRepository.save(studentExam);
         return buildSubmitResponse(studentExam);
     }
-
     public StudentExamSubmitResponseDto getExamResultBySessionAndStudent(String examSessionId, String studentId) {
         List<StudentExam> attempts = studentExamRepository.findByExamSessionIdAndStudentId(examSessionId, studentId);
         if (attempts.isEmpty()) {
