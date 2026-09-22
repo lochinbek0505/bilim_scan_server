@@ -173,7 +173,6 @@ public class ExamService {
         Instant finishedAt = Instant.now();
         studentExam.setFinishedAt(finishedAt);
 
-        // Vaqtni hisoblash
         long timeTakenSeconds = Duration.between(studentExam.getStartedAt(), finishedAt).getSeconds();
         double totalMinimumTime = 0.0;
 
@@ -182,16 +181,18 @@ public class ExamService {
 
         Map<String, TopicStats> topicStatsMap = new HashMap<>();
 
-        // Naqshni aniqlash uchun
         int maxConsecutiveSameOption = 0;
         int currentConsecutive = 1;
         Integer lastSelectedOptionIndex = null;
+
+        // YANGLIK: Savollarning to'g'ri/xato holatini va bog'liqliklarini saqlab borish
+        Map<String, Boolean> correctnessMap = new HashMap<>();
+        Map<String, List<String>> questionRelationsMap = new HashMap<>();
 
         for (String questionId : studentExam.getAssignedQuestionIds()) {
             TestQuestion question = testQuestionRepository.findById(questionId).orElse(null);
             if (question == null) continue;
 
-            // Minimum vaqtni qo'shish (standart 15 soniya)
             totalMinimumTime += (question.getMinimumTime() != null && question.getMinimumTime() > 0) ? question.getMinimumTime() : 15.0;
 
             String topicKey = (question.getMavzu() != null && question.getMavzu().getId() != null)
@@ -203,13 +204,18 @@ public class ExamService {
             List<String> studentAnswers = dto.getAnswers().getOrDefault(questionId, Collections.emptyList());
             boolean isCorrect = checkAnswerIsCorrect(question, studentAnswers);
 
+            // Natijani Map ga saqlash
+            correctnessMap.put(questionId, isCorrect);
+            if (question.getRelatedQuestionIds() != null && !question.getRelatedQuestionIds().isEmpty()) {
+                questionRelationsMap.put(questionId, question.getRelatedQuestionIds());
+            }
+
             topicStatsMap.get(topicKey).total++;
             if (isCorrect) {
                 correctAnswersCount++;
                 topicStatsMap.get(topicKey).correct++;
             }
 
-            // Naqsh (Tavakkal) ni tekshirish
             if (!studentAnswers.isEmpty() && question.getType() == QuestionType.SINGLE_CHOICE && studentExam.getPresentedOptions() != null) {
                 String selectedText = studentAnswers.get(0);
                 List<String> presented = studentExam.getPresentedOptions().get(questionId);
@@ -231,21 +237,42 @@ public class ExamService {
             }
         }
 
-        // Shubhalilikni baholash
+        // YANGLIK: Bog'liq savollardagi shubhani tekshirish
+        boolean isSuspiciousRelation = false;
+        for (Map.Entry<String, List<String>> entry : questionRelationsMap.entrySet()) {
+            String mainQuestionId = entry.getKey();
+            Boolean mainIsCorrect = correctnessMap.get(mainQuestionId);
+
+            if (mainIsCorrect == null) continue;
+
+            for (String relatedId : entry.getValue()) {
+                Boolean relatedIsCorrect = correctnessMap.get(relatedId);
+                // Agar o'zaro bog'liq savollar natijasi farq qilsa (biri true, ikkinchisi false)
+                if (relatedIsCorrect != null && mainIsCorrect != relatedIsCorrect) {
+                    isSuspiciousRelation = true;
+                    break;
+                }
+            }
+            if (isSuspiciousRelation) break;
+        }
+
         boolean isSuspiciousTime = timeTakenSeconds <= totalMinimumTime;
         boolean isSuspiciousPattern = maxConsecutiveSameOption >= 5;
 
         studentExam.setTimeTakenSeconds(timeTakenSeconds);
-        studentExam.setIsSuspicious(isSuspiciousTime || isSuspiciousPattern);
+        // YANGLIK: Relation flag qo'shildi
+        studentExam.setIsSuspicious(isSuspiciousTime || isSuspiciousPattern || isSuspiciousRelation);
 
         List<String> suspicionReasons = new ArrayList<>();
         if (isSuspiciousTime)
             suspicionReasons.add("Minimal kutilgan vaqtdan tezroq ishlandi (" + timeTakenSeconds + " sek)");
         if (isSuspiciousPattern)
             suspicionReasons.add("Tavakkal ehtimoli: " + maxConsecutiveSameOption + " ta ketma-ket bir xil variant belgilangan");
+        if (isSuspiciousRelation)
+            suspicionReasons.add("O'zaro bog'liq savollarning mantiqsiz javoblari: biri to'g'ri, ikkinchisi xato ishlangan");
+
         studentExam.setSuspicionReason(String.join(". ", suspicionReasons));
 
-        // Natijalarni hisoblash
         double percentage = ((double) correctAnswersCount / totalQuestions) * 100;
         studentExam.setTotalQuestions(totalQuestions);
         studentExam.setCorrectAnswers(correctAnswersCount);
@@ -323,25 +350,34 @@ public class ExamService {
     // --- YORDAMCHI METODLAR ---
 
     private List<TestQuestion> generateRandomQuestionsWithRelations(List<TestQuestion> allQuestions, int requiredCount) {
-        Map<String, TestQuestion> questionMap = allQuestions.stream().collect(Collectors.toMap(TestQuestion::getId, q -> q));
+        Map<String, TestQuestion> questionMap = allQuestions.stream()
+                .collect(Collectors.toMap(TestQuestion::getId, q -> q));
         Set<String> selectedIds = new HashSet<>();
         List<TestQuestion> questionsPool = new ArrayList<>(allQuestions);
         Collections.shuffle(questionsPool);
 
         for (TestQuestion q : questionsPool) {
-            if (q.getRelatedQuestionIds() != null && !q.getRelatedQuestionIds().isEmpty()) {
-                selectedIds.add(q.getId());
-                int relatedToAdd = Math.min(2, q.getRelatedQuestionIds().size());
-                for (int i = 0; i < relatedToAdd; i++) {
-                    selectedIds.add(q.getRelatedQuestionIds().get(i));
-                }
-                break;
+            if (selectedIds.size() >= requiredCount) {
+                break; // Yetarlicha savol yig'ildi
             }
-        }
+            if (selectedIds.contains(q.getId())) {
+                continue; // Bu savol avval qaysidir savolga bog'liq sifatida qo'shilgan bo'lishi mumkin
+            }
 
-        for (TestQuestion q : questionsPool) {
-            if (selectedIds.size() >= requiredCount) break;
-            selectedIds.add(q.getId());
+            // Asosiy savol va unga bog'langan barcha savollarni yig'amiz
+            Set<String> groupToAdd = new HashSet<>();
+            groupToAdd.add(q.getId());
+
+            if (q.getRelatedQuestionIds() != null && !q.getRelatedQuestionIds().isEmpty()) {
+                for (String relId : q.getRelatedQuestionIds()) {
+                    if (questionMap.containsKey(relId)) {
+                        groupToAdd.add(relId);
+                    }
+                }
+            }
+
+            // Barcha bog'liq savollar bilan birga testga qo'shish
+            selectedIds.addAll(groupToAdd);
         }
 
         List<TestQuestion> finalQuestions = selectedIds.stream()
@@ -352,7 +388,6 @@ public class ExamService {
         Collections.shuffle(finalQuestions);
         return finalQuestions;
     }
-
     private List<TestOptionDto> shuffleOptionsEvenly(TestQuestion question, int targetCorrectIndex) {
         if (question.getOptions() == null || question.getOptions().isEmpty() || question.getType() != QuestionType.SINGLE_CHOICE) {
             if (question.getOptions() != null) {
