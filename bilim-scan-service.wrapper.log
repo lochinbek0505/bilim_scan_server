@@ -224,3 +224,90 @@ System.ComponentModel.Win32Exception (2): An error occurred trying to start proc
 2026-09-22 16:58:01,287 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
 2026-09-22 16:58:01,320 INFO  - Started process 4600
 2026-09-22 16:58:01,330 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-22 17:48:42,725 DEBUG - Starting WinSW in console mode
+2026-09-22 17:48:44,649 DEBUG - Starting WinSW in console mode
+2026-09-22 17:48:44,752 INFO  - Stopping service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 17:48:44,758 INFO  - Service 'Bilim Scan Server (BilimScanService)' stopped successfully.
+2026-09-22 17:48:44,759 INFO  - Stopping BilimScanService
+2026-09-22 17:48:44,759 DEBUG - ProcessKill 4600
+2026-09-22 17:48:44,761 DEBUG - Stopping process 4600...
+2026-09-22 17:48:45,140 DEBUG - Process 4600 canceled with code 130.
+2026-09-22 17:48:45,142 INFO  - Finished BilimScanService
+2026-09-22 17:48:50,251 DEBUG - Starting WinSW in console mode
+2026-09-22 17:48:51,921 DEBUG - Starting WinSW in console mode
+2026-09-22 17:48:51,944 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 17:48:51,949 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-22 17:56:14,752 DEBUG - Starting WinSW in console mode
+2026-09-22 17:56:18,255 DEBUG - Starting WinSW in console mode
+2026-09-22 17:56:18,277 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 17:56:18,292 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-22 17:56:26,072 DEBUG - Starting WinSW in console mode
+2026-09-22 17:56:27,799 DEBUG - Starting WinSW in console mode
+2026-09-22 17:56:27,824 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 17:56:28,161 DEBUG - Starting WinSW in service mode
+2026-09-22 17:56:28,183 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-22 17:56:28,268 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-22 17:56:28,284 INFO  - Started process 8248
+2026-09-22 17:56:28,293 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-22 18:50:01,182 DEBUG - Starting WinSW in console mode
+2026-09-22 18:50:02,837 DEBUG - Starting WinSW in console mode
+2026-09-22 18:50:02,863 INFO  - Stopping service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 18:50:02,870 INFO  - Service 'Bilim Scan Server (BilimScanService)' stopped successfully.
+2026-09-22 18:50:02,871 INFO  - Stopping BilimScanService
+2026-09-22 18:50:02,871 DEBUG - ProcessKill 8248
+2026-09-22 18:50:02,875 DEBUG - Stopping process 8248...
+2026-09-22 18:50:03,249 DEBUG - Process 8248 canceled with code 130.
+2026-09-22 18:50:03,254 INFO  - Finished BilimScanService
+2026-09-22 18:50:07,942 DEBUG - Starting WinSW in console mode
+2026-09-22 18:50:09,454 DEBUG - Starting WinSW in console mode
+2026-09-22 18:50:09,477 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 18:50:09,482 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-22 18:58:02,886 DEBUG - Starting WinSW in console mode
+2026-09-22 18:58:05,870 DEBUG - Starting WinSW in console mode
+2026-09-22 18:58:05,895 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 18:58:05,909 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-22 18:58:13,348 DEBUG - Starting WinSW in console mode
+2026-09-22 18:58:16,718 DEBUG - Starting WinSW in console mode
+2026-09-22 18:58:16,743 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 18:58:17,088 DEBUG - Starting WinSW in service mode
+2026-09-22 18:58:17,110 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-22 18:58:17,197 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-22 18:58:17,214 INFO  - Started process 17588
+2026-09-22 18:58:17,222 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-22 19:10:06,498 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:08,538 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:08,564 INFO  - Stopping service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 19:10:08,570 INFO  - Service 'Bilim Scan Server (BilimScanService)' stopped successfully.
+2026-09-22 19:10:08,572 INFO  - Stopping BilimScanService
+2026-09-22 19:10:08,572 DEBUG - ProcessKill 17588
+2026-09-22 19:10:08,574 DEBUG - Stopping process 17588...
+2026-09-22 19:10:08,956 DEBUG - Process 17588 canceled with code 130.
+2026-09-22 19:10:08,959 INFO  - Finished BilimScanService
+2026-09-22 19:10:13,604 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:15,468 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:15,491 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 19:10:15,495 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-22 19:10:21,071 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:22,784 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:22,806 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 19:10:22,821 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-22 19:10:29,133 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:31,230 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:31,255 INFO  - Stopping service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 19:10:31,266 INFO  - Service 'Bilim Scan Server (BilimScanService)' has already stopped.
+2026-09-22 19:10:34,439 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:36,444 DEBUG - Starting WinSW in console mode
+2026-09-22 19:10:36,467 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 19:10:36,471 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-22 19:17:21,451 DEBUG - Starting WinSW in console mode
+2026-09-22 19:17:23,195 DEBUG - Starting WinSW in console mode
+2026-09-22 19:17:23,219 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 19:17:23,232 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-22 19:17:27,498 DEBUG - Starting WinSW in console mode
+2026-09-22 19:17:29,032 DEBUG - Starting WinSW in console mode
+2026-09-22 19:17:29,057 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-22 19:17:29,403 DEBUG - Starting WinSW in service mode
+2026-09-22 19:17:29,449 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-22 19:17:29,538 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-22 19:17:29,555 INFO  - Started process 3184
+2026-09-22 19:17:29,563 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender

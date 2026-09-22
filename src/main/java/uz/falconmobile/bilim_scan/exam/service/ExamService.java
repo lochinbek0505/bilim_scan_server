@@ -264,7 +264,7 @@ public class ExamService {
         if (isSuspiciousPattern)
             suspicionReasons.add("Tavakkal ehtimoli: " + maxConsecutiveSameOption + " ta ketma-ket bir xil variant belgilangan");
         if (isSuspiciousRelation)
-            suspicionReasons.add("O'zaro bog'liq savollarning mantiqsiz javoblari: biri to'g'ri, ikkinchisi xato ishlangan");
+            suspicionReasons.add("O'zaro bog'liq savollarning nomutanosibligi : javoblarning  biri to'g'ri, ikkinchisi xato ishlangan");
 
         studentExam.setSuspicionReason(String.join(". ", suspicionReasons));
 
