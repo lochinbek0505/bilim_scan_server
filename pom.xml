@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.1</version>
+        <version>3.3.0</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>uz.falconmobile</groupId>
@@ -91,7 +91,7 @@
                 <configuration>
                     <metadataRepository>
                         <enabled>true</enabled>
-                        <version>0.3.3</version> <!-- GraalVM 21 tushunadigan eski qoidalar bazasi -->
+                        <version>0.3.33</version> <!-- GraalVM 21 tushunadigan eski qoidalar bazasi -->
                     </metadataRepository>
                 </configuration>
             </plugin>

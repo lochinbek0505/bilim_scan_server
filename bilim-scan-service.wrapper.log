@@ -1,0 +1,226 @@
+2026-09-17 17:39:46,980 DEBUG - Starting WinSW in console mode
+2026-09-17 17:39:50,056 DEBUG - Starting WinSW in console mode
+2026-09-17 17:39:50,079 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 17:39:50,105 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-17 17:40:01,092 DEBUG - Starting WinSW in console mode
+2026-09-17 17:40:04,035 DEBUG - Starting WinSW in console mode
+2026-09-17 17:40:04,061 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 17:40:04,423 DEBUG - Starting WinSW in service mode
+2026-09-17 17:40:04,445 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-17 17:40:04,535 INFO  - Starting java -jar bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 17:40:04,557 ERROR - Failed to start service.
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'java' with working directory 'C:\Users\UltraPC\IdeaProjects\bilim_scan_server'. Не удается найти указанный файл.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo )
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo )
+   at System.Diagnostics.Process.Start()
+   at WinSW.Util.ProcessHelper.StartProcessAndCallbackForExit(Process processToStart, String executable, String arguments, Dictionary`2 envVars, String workingDirectory, Nullable`1 priority, ProcessCompletionCallback callback, LogHandler logHandler, Boolean hideWindow)
+   at WinSW.WrapperService.StartProcess(Process processToStart, String arguments, String executable, LogHandler logHandler)
+   at WinSW.WrapperService.DoStart()
+   at WinSW.WrapperService.OnStart(String[] args)
+2026-09-17 17:45:30,213 DEBUG - Starting WinSW in service mode
+2026-09-17 17:45:30,319 INFO  - Starting java -jar bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 17:45:30,338 ERROR - Failed to start service.
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'java' with working directory 'C:\Users\UltraPC\IdeaProjects\bilim_scan_server'. Не удается найти указанный файл.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo )
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo )
+   at System.Diagnostics.Process.Start()
+   at WinSW.Util.ProcessHelper.StartProcessAndCallbackForExit(Process processToStart, String executable, String arguments, Dictionary`2 envVars, String workingDirectory, Nullable`1 priority, ProcessCompletionCallback callback, LogHandler logHandler, Boolean hideWindow)
+   at WinSW.WrapperService.StartProcess(Process processToStart, String arguments, String executable, LogHandler logHandler)
+   at WinSW.WrapperService.DoStart()
+   at WinSW.WrapperService.OnStart(String[] args)
+2026-09-17 17:45:42,438 DEBUG - Starting WinSW in service mode
+2026-09-17 17:45:42,544 INFO  - Starting java -jar bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 17:45:42,564 ERROR - Failed to start service.
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'java' with working directory 'C:\Users\UltraPC\IdeaProjects\bilim_scan_server'. Не удается найти указанный файл.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo )
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo )
+   at System.Diagnostics.Process.Start()
+   at WinSW.Util.ProcessHelper.StartProcessAndCallbackForExit(Process processToStart, String executable, String arguments, Dictionary`2 envVars, String workingDirectory, Nullable`1 priority, ProcessCompletionCallback callback, LogHandler logHandler, Boolean hideWindow)
+   at WinSW.WrapperService.StartProcess(Process processToStart, String arguments, String executable, LogHandler logHandler)
+   at WinSW.WrapperService.DoStart()
+   at WinSW.WrapperService.OnStart(String[] args)
+2026-09-17 17:46:02,170 DEBUG - Starting WinSW in console mode
+2026-09-17 17:46:04,703 DEBUG - Starting WinSW in console mode
+2026-09-17 17:46:04,730 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 17:46:05,068 DEBUG - Starting WinSW in service mode
+2026-09-17 17:46:05,090 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-17 17:46:05,177 INFO  - Starting java -jar bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 17:46:05,196 ERROR - Failed to start service.
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'java' with working directory 'C:\Users\UltraPC\IdeaProjects\bilim_scan_server'. Не удается найти указанный файл.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo )
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo )
+   at System.Diagnostics.Process.Start()
+   at WinSW.Util.ProcessHelper.StartProcessAndCallbackForExit(Process processToStart, String executable, String arguments, Dictionary`2 envVars, String workingDirectory, Nullable`1 priority, ProcessCompletionCallback callback, LogHandler logHandler, Boolean hideWindow)
+   at WinSW.WrapperService.StartProcess(Process processToStart, String arguments, String executable, LogHandler logHandler)
+   at WinSW.WrapperService.DoStart()
+   at WinSW.WrapperService.OnStart(String[] args)
+2026-09-17 17:47:22,449 DEBUG - Starting WinSW in service mode
+2026-09-17 17:47:22,554 INFO  - Starting java -jar bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 17:47:22,573 ERROR - Failed to start service.
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'java' with working directory 'C:\Users\UltraPC\IdeaProjects\bilim_scan_server'. Не удается найти указанный файл.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo )
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo )
+   at System.Diagnostics.Process.Start()
+   at WinSW.Util.ProcessHelper.StartProcessAndCallbackForExit(Process processToStart, String executable, String arguments, Dictionary`2 envVars, String workingDirectory, Nullable`1 priority, ProcessCompletionCallback callback, LogHandler logHandler, Boolean hideWindow)
+   at WinSW.WrapperService.StartProcess(Process processToStart, String arguments, String executable, LogHandler logHandler)
+   at WinSW.WrapperService.DoStart()
+   at WinSW.WrapperService.OnStart(String[] args)
+2026-09-17 17:50:16,978 DEBUG - Starting WinSW in console mode
+2026-09-17 17:50:18,865 DEBUG - Starting WinSW in console mode
+2026-09-17 17:50:18,888 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 17:50:18,892 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-17 17:50:29,916 DEBUG - Starting WinSW in console mode
+2026-09-17 17:50:31,815 DEBUG - Starting WinSW in console mode
+2026-09-17 17:50:31,838 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 17:50:31,851 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-17 17:50:38,868 DEBUG - Starting WinSW in console mode
+2026-09-17 17:50:40,519 DEBUG - Starting WinSW in console mode
+2026-09-17 17:50:40,544 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 17:50:40,884 DEBUG - Starting WinSW in service mode
+2026-09-17 17:50:40,906 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-17 17:50:40,991 INFO  - Starting C:\GraalVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 17:50:41,010 ERROR - Failed to start service.
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'C:\GraalVM\graalvm-jdk-21.0.7+8.1\bin\java.exe' with working directory 'C:\Users\UltraPC\IdeaProjects\bilim_scan_server'. Не удается найти указанный файл.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo )
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo )
+   at System.Diagnostics.Process.Start()
+   at WinSW.Util.ProcessHelper.StartProcessAndCallbackForExit(Process processToStart, String executable, String arguments, Dictionary`2 envVars, String workingDirectory, Nullable`1 priority, ProcessCompletionCallback callback, LogHandler logHandler, Boolean hideWindow)
+   at WinSW.WrapperService.StartProcess(Process processToStart, String arguments, String executable, LogHandler logHandler)
+   at WinSW.WrapperService.DoStart()
+   at WinSW.WrapperService.OnStart(String[] args)2026-09-17 18:28:11,675 DEBUG - Starting WinSW in console mode
+2026-09-17 18:28:14,260 DEBUG - Starting WinSW in console mode
+2026-09-17 18:28:14,283 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:28:14,287 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-17 18:28:17,340 DEBUG - Starting WinSW in console mode
+2026-09-17 18:28:19,458 DEBUG - Starting WinSW in console mode
+2026-09-17 18:28:19,481 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:28:19,495 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-17 18:28:24,045 DEBUG - Starting WinSW in console mode
+2026-09-17 18:28:26,124 DEBUG - Starting WinSW in console mode
+2026-09-17 18:28:26,149 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:28:26,490 DEBUG - Starting WinSW in service mode
+2026-09-17 18:28:26,512 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-17 18:28:26,599 INFO  - Starting C:\GraalVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 18:28:26,619 ERROR - Failed to start service.
+System.ComponentModel.Win32Exception (2): An error occurred trying to start process 'C:\GraalVM\graalvm-jdk-21.0.7+8.1\bin\java.exe' with working directory 'C:\Users\UltraPC\IdeaProjects\bilim_scan_server'. Не удается найти указанный файл.
+   at System.Diagnostics.Process.StartWithCreateProcess(ProcessStartInfo )
+   at System.Diagnostics.Process.StartCore(ProcessStartInfo )
+   at System.Diagnostics.Process.Start()
+   at WinSW.Util.ProcessHelper.StartProcessAndCallbackForExit(Process processToStart, String executable, String arguments, Dictionary`2 envVars, String workingDirectory, Nullable`1 priority, ProcessCompletionCallback callback, LogHandler logHandler, Boolean hideWindow)
+   at WinSW.WrapperService.StartProcess(Process processToStart, String arguments, String executable, LogHandler logHandler)
+   at WinSW.WrapperService.DoStart()
+   at WinSW.WrapperService.OnStart(String[] args)
+2026-09-17 18:42:27,557 DEBUG - Starting WinSW in console mode
+2026-09-17 18:42:29,190 DEBUG - Starting WinSW in console mode
+2026-09-17 18:42:29,212 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:42:29,217 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-17 18:42:39,491 DEBUG - Starting WinSW in console mode
+2026-09-17 18:42:41,161 DEBUG - Starting WinSW in console mode
+2026-09-17 18:42:41,184 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:42:41,198 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-17 18:42:49,420 DEBUG - Starting WinSW in console mode
+2026-09-17 18:42:51,755 DEBUG - Starting WinSW in console mode
+2026-09-17 18:42:51,780 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:42:52,138 DEBUG - Starting WinSW in service mode
+2026-09-17 18:42:52,160 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-17 18:42:52,248 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar "C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar"
+2026-09-17 18:42:52,268 INFO  - Started process 14740
+2026-09-17 18:42:52,276 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-17 18:43:26,484 DEBUG - Starting WinSW in service mode
+2026-09-17 18:43:26,590 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar "C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar"
+2026-09-17 18:43:26,608 INFO  - Started process 17088
+2026-09-17 18:43:26,617 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-17 18:45:44,943 DEBUG - Starting WinSW in console mode
+2026-09-17 18:45:47,007 DEBUG - Starting WinSW in console mode
+2026-09-17 18:45:47,029 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:45:47,034 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-17 18:45:50,455 DEBUG - Starting WinSW in console mode
+2026-09-17 18:45:52,681 DEBUG - Starting WinSW in console mode
+2026-09-17 18:45:52,704 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:45:52,718 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-17 18:45:55,027 DEBUG - Starting WinSW in console mode
+2026-09-17 18:45:57,165 DEBUG - Starting WinSW in console mode
+2026-09-17 18:45:57,190 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-17 18:45:57,528 DEBUG - Starting WinSW in service mode
+2026-09-17 18:45:57,550 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-17 18:45:57,639 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 18:45:57,657 INFO  - Started process 4284
+2026-09-17 18:45:57,666 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-17 19:06:32,203 INFO  - Stopping BilimScanService
+2026-09-17 19:06:32,203 DEBUG - ProcessKill 4284
+2026-09-17 19:06:32,207 DEBUG - Stopping process 4284...
+2026-09-17 19:06:32,588 DEBUG - Process 4284 canceled with code 130.
+2026-09-17 19:06:32,592 INFO  - Finished BilimScanService
+2026-09-17 19:06:35,267 DEBUG - Starting WinSW in service mode
+2026-09-17 19:06:35,411 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 19:06:35,428 INFO  - Started process 10092
+2026-09-17 19:06:35,437 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-17 19:12:54,583 DEBUG - Starting WinSW in service mode
+2026-09-17 19:12:54,728 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 19:12:54,764 INFO  - Started process 4740
+2026-09-17 19:12:54,773 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-17 19:17:35,611 DEBUG - Starting WinSW in service mode
+2026-09-17 19:17:35,753 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-17 19:17:35,789 INFO  - Started process 5896
+2026-09-17 19:17:35,798 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-21 15:36:22,492 DEBUG - Starting WinSW in service mode
+2026-09-21 15:36:22,641 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-21 15:36:22,681 INFO  - Started process 6152
+2026-09-21 15:36:22,692 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-21 15:43:46,530 DEBUG - Starting WinSW in console mode
+2026-09-21 15:43:48,552 DEBUG - Starting WinSW in console mode
+2026-09-21 15:43:48,833 INFO  - Stopping service 'Bilim Scan Server (BilimScanService)'...
+2026-09-21 15:43:48,840 INFO  - Service 'Bilim Scan Server (BilimScanService)' stopped successfully.
+2026-09-21 15:43:48,841 INFO  - Stopping BilimScanService
+2026-09-21 15:43:48,841 DEBUG - ProcessKill 6152
+2026-09-21 15:43:48,844 DEBUG - Stopping process 6152...
+2026-09-21 15:43:49,223 DEBUG - Process 6152 canceled with code 130.
+2026-09-21 15:43:49,227 INFO  - Finished BilimScanService
+2026-09-21 15:44:07,408 DEBUG - Starting WinSW in console mode
+2026-09-21 15:44:09,059 DEBUG - Starting WinSW in console mode
+2026-09-21 15:44:09,081 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-21 15:44:09,085 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-21 15:44:15,112 DEBUG - Starting WinSW in console mode
+2026-09-21 15:44:16,782 DEBUG - Starting WinSW in console mode
+2026-09-21 15:44:16,805 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-21 15:44:16,819 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-21 15:44:24,853 DEBUG - Starting WinSW in console mode
+2026-09-21 15:44:26,563 DEBUG - Starting WinSW in console mode
+2026-09-21 15:44:26,588 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-21 15:44:26,938 DEBUG - Starting WinSW in service mode
+2026-09-21 15:44:26,960 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-21 15:44:27,052 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-21 15:44:27,070 INFO  - Started process 16372
+2026-09-21 15:44:27,080 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-21 16:13:08,792 DEBUG - Starting WinSW in console mode
+2026-09-21 16:13:11,132 DEBUG - Starting WinSW in console mode
+2026-09-21 16:13:11,159 INFO  - Stopping service 'Bilim Scan Server (BilimScanService)'...
+2026-09-21 16:13:11,166 INFO  - Stopping BilimScanService
+2026-09-21 16:13:11,165 INFO  - Service 'Bilim Scan Server (BilimScanService)' stopped successfully.
+2026-09-21 16:13:11,175 DEBUG - Stopping process 16372...
+2026-09-21 16:13:11,550 DEBUG - Process 16372 canceled with code 130.
+2026-09-21 16:13:11,554 INFO  - Finished BilimScanService
+2026-09-21 16:13:16,576 DEBUG - Starting WinSW in console mode
+2026-09-21 16:13:18,287 DEBUG - Starting WinSW in console mode
+2026-09-21 16:13:18,313 INFO  - Uninstalling service 'Bilim Scan Server (BilimScanService)'...
+2026-09-21 16:13:18,318 INFO  - Service 'Bilim Scan Server (BilimScanService)' was uninstalled successfully.
+2026-09-21 16:46:43,234 DEBUG - Starting WinSW in console mode
+2026-09-21 16:46:45,463 DEBUG - Starting WinSW in console mode
+2026-09-21 16:46:45,487 INFO  - Installing service 'Bilim Scan Server (BilimScanService)'...
+2026-09-21 16:46:45,501 INFO  - Service 'Bilim Scan Server (BilimScanService)' was installed successfully.
+2026-09-21 16:46:53,933 DEBUG - Starting WinSW in console mode
+2026-09-21 16:46:55,556 DEBUG - Starting WinSW in console mode
+2026-09-21 16:46:55,584 INFO  - Starting service 'Bilim Scan Server (BilimScanService)'...
+2026-09-21 16:46:55,974 DEBUG - Starting WinSW in service mode
+2026-09-21 16:46:55,996 INFO  - Service 'Bilim Scan Server (BilimScanService)' started successfully.
+2026-09-21 16:46:56,090 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-21 16:46:56,108 INFO  - Started process 24000
+2026-09-21 16:46:56,117 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-22 14:26:30,216 DEBUG - Starting WinSW in service mode
+2026-09-22 14:26:30,381 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-22 14:26:30,426 INFO  - Started process 5072
+2026-09-22 14:26:30,440 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender
+2026-09-22 16:58:01,150 DEBUG - Starting WinSW in service mode
+2026-09-22 16:58:01,287 INFO  - Starting C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe -jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar
+2026-09-22 16:58:01,320 INFO  - Started process 4600
+2026-09-22 16:58:01,330 DEBUG - Forwarding logs of the process System.Diagnostics.Process (java) to WinSW.RollingLogAppender

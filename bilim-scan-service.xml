@@ -1,0 +1,11 @@
+<service>
+    <id>BilimScanService</id>
+    <name>Bilim Scan Server</name>
+    <description>Bilim Scan loyihasining Spring Boot orqa foni</description>
+
+    <executable>C:\Users\UltraPC\GRAALVM\graalvm-jdk-21.0.7+8.1\bin\java.exe</executable>
+
+    <arguments>-jar C:\Users\UltraPC\IdeaProjects\bilim_scan_server\target\bilim_scan-0.0.1-SNAPSHOT.jar</arguments>
+
+    <log mode="roll"></log>
+</service>
