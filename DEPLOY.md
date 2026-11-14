@@ -18,6 +18,54 @@ Brauzer ──HTTPS──► Nginx ─┬─ flashtest.uz        → /var/www/fl
 
 ---
 
+## ⚡ Tez yo'l: bitta skript bilan (`deploy.sh`)
+
+Serverdagi papkalar:
+```
+/root/bilim_scan_server        ← backend repo (deploy.sh shu yerda)
+/root/bilimscan_admin/web      ← admin/o'qituvchi Flutter web build  (APP_TYPE=admin)
+/root/bilimscan_user/web       ← kursant Flutter web build           (APP_TYPE=student)
+```
+
+**Birinchi marta** (DNS A yozuvlari qo'shilgan bo'lsin, pastdagi 0-bo'lim):
+```bash
+cd /root/bilim_scan_server
+nano deploy.sh            # xohlasangiz CERTBOT_EMAIL="..." ni yozing
+chmod +x deploy.sh
+./deploy.sh
+```
+Skript o'zi: paketlarni o'rnatadi, firewall'ni yoqadi, MongoDB'ni (Docker) ishga tushiradi, parollarni generatsiya qilib `/etc/bilim-scan/bilim-scan.env` ga yozadi, backend'ni build qilib systemd servisi qiladi, ikkala saytni `/var/www/...` ga joylaydi, Nginx va SSL'ni sozlaydi. Oxirida **birinchi admin login/paroli** chiqadi — saqlab qo'ying.
+
+**Keyingi safarlar:**
+```bash
+./deploy.sh               # hammasi (git pull + backend + admin + user)
+./deploy.sh backend       # faqat backend
+./deploy.sh web           # faqat ikkala sayt
+./deploy.sh admin         # faqat admin sayti
+./deploy.sh user          # faqat kursant sayti
+./deploy.sh --no-pull     # git pull qilmasdan
+```
+
+- Papka git repo bo'lsa, skript avval `git pull --ff-only` qiladi.
+- Yangi backend ishga tushmasa, skript avtomatik **oldingi versiyaga qaytaradi** va logni ko'rsatadi.
+- `web/` ichida `index.html` va `main.dart.js` bo'lmasa — xato beradi, saytga tegmaydi. Admin va user build'lari bir xil bo'lsa ogohlantiradi (`APP_TYPE` adashgan).
+- Nginx fayllari va env fayl faqat birinchi marta yaratiladi — keyin qo'lda o'zgartirsangiz, skript ularni ustidan yozmaydi.
+- DNS hali tayyor bo'lmagan domen SSL'siz qoladi — DNS tayyor bo'lgach `./deploy.sh` ni qayta ishga tushirsangiz SSL oladi.
+
+**Flutter build'larni Mac'dan serverga yuborish:**
+```bash
+cd ~/AndroidStudioProjects/bilim_scan
+flutter build web --release --dart-define=APP_TYPE=admin   -o build/web_admin
+flutter build web --release --dart-define=APP_TYPE=student -o build/web_user
+rsync -az --delete build/web_admin/ root@<SERVER_IP>:/root/bilimscan_admin/web/
+rsync -az --delete build/web_user/  root@<SERVER_IP>:/root/bilimscan_user/web/
+ssh root@<SERVER_IP> '/root/bilim_scan_server/deploy.sh web'
+```
+
+Quyidagi bo'limlar — skript aynan nima qilishining qo'lda bajariladigan varianti (tushunish va muammo bo'lganda kerak).
+
+---
+
 ## 0. Deploydan oldin
 
 **Backend repo (`bilim_scan_server`)** — quyidagilar commit + push qilingan bo'lsin:
@@ -434,3 +482,5 @@ Orqaga qaytarish: `cp /opt/bilim-scan/app.jar.bak /opt/bilim-scan/app.jar && sys
 | `Unauthorized` / Mongo auth xatosi | `SPRING_DATA_MONGODB_URI` dagi parol `docker-compose.yml` dagi bilan bir xil emas. |
 | `WeakKeyException` | `JWT_SECRET` 32 belgidan qisqa. |
 | Import'da `413` | Nginx `client_max_body_size` yoki `MAX_UPLOAD_SIZE` kichik. |
+| `MongoDB ishga tushmadi`, `docker logs mongo` da `AVX` haqida xato | VPS protsessorida AVX yo'q — MongoDB 5+ ishlamaydi. `mongo:4.4` image'ini ishlating yoki VPS provayderidan AVX'li tarif so'rang. |
+| `deploy.sh` da `git pull` xatosi | Serverdagi papkada lokal o'zgarish bor. `git -C <papka> status` bilan ko'ring yoki `./deploy.sh --no-pull`. |
