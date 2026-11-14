@@ -1,6 +1,7 @@
 package uz.falconmobile.bilim_scan.config; // O'zingizning paketingizga moslang
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -8,7 +9,9 @@ import org.springframework.stereotype.Component;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
+// Lokal tarmoq (LAN) uchun. Domen orqali ishlaganda DISCOVERY_ENABLED=false qiling
 @Component
+@ConditionalOnProperty(name = "discovery.enabled", havingValue = "true", matchIfMissing = true)
 public class NetworkDiscoveryService {
 
     // application.properties dagi portni oladi, topolmasa 4257 ni ishlatadi

@@ -1,110 +1,78 @@
-# Bilim Scan Server — Ubuntu 26.04 serverga deploy qilish
+# FlashTest (Bilim Scan) — Ubuntu 26.04 serverga deploy qilish
 
-Bu yo'riqnoma **yangi, bo'sh Ubuntu 26.04** server uchun. Natijada:
+Yangi, bo'sh Ubuntu 26.04 server uchun. Barcha buyruqlar **root** foydalanuvchisi bilan bajariladi.
 
-- Java 21 + Spring Boot ilova `systemd` servisi sifatida ishlaydi (avtomatik qayta ishga tushadi);
-- MongoDB Docker konteynerida, faqat `127.0.0.1` da, parol bilan ishlaydi;
-- maxfiy sozlamalar (`JWT_SECRET`, Mongo paroli, admin paroli) `/etc/bilim-scan/bilim-scan.env` faylida turadi;
-- (ixtiyoriy) Nginx + HTTPS orqali domen bilan chiqariladi.
+| Manzil | Nima turadi | Serverdagi joyi |
+|--------|-------------|-----------------|
+| `https://api.flashtest.uz/api/...` | Spring Boot backend (+ `/uploads/...` rasmlar) | `/opt/bilim-scan` → `127.0.0.1:4257` |
+| `https://admin.flashtest.uz` | Flutter web — admin / o'qituvchi (`APP_TYPE=admin`) | `/var/www/admin.flashtest.uz` |
+| `https://flashtest.uz` | Flutter web — kursant / user (`APP_TYPE=student`) | `/var/www/flashtest.uz` |
 
-> Buyruqlardagi `<...>` qiymatlarni o'zingiznikiga almashtiring.
+```
+Brauzer ──HTTPS──► Nginx ─┬─ flashtest.uz        → /var/www/flashtest.uz (static)
+                          ├─ admin.flashtest.uz  → /var/www/admin.flashtest.uz (static)
+                          └─ api.flashtest.uz    → 127.0.0.1:4257 (Spring Boot) ──► MongoDB (Docker, 127.0.0.1:27017)
+```
 
----
-
-## 0. Deploydan oldin loyihada bilish kerak bo'lgan narsalar
-
-| # | Holat | Izoh |
-|---|-------|------|
-| 1 | ✅ **Tuzatildi** | `application.properties` da `spring.mongodb.uri` yozilgan edi. Spring Boot 3.3 da bu kalit **o'qilmaydi** (to'g'risi `spring.data.mongodb.uri`). Shu sababli Windows serverda ilova Mongo'ga parolsiz, `test` bazasiga ulangan edi (`bilim-scan-service.out.log` da `credential=null` ko'rinadi). Endi kalit to'g'rilandi. |
-| 2 | ⚠️ | Eski Windows serverdagi ma'lumotlar **`test`** nomli bazada turibdi. Ko'chirishda shuni hisobga oling (11-qadam). |
-| 3 | ⚠️ | `application.properties` ichida standart (default) parollar bor: Mongo paroli, `JWT_SECRET`, `admin123`. Ular git tarixida qolgan — **serverda albatta yangi qiymatlarni env fayl orqali bering** (5-qadam). |
-| 4 | ⚠️ | `uploads/` papkasi va `file.upload-dir` **nisbiy yo'l** (relative path). Ilova albatta `/opt/bilim-scan` papkasidan ishga tushishi kerak (`WorkingDirectory` systemd'da berilgan). |
-| 5 | ℹ️ | `NetworkDiscoveryService` UDP **8888** portda LAN broadcast orqali serverni topadi. Bu faqat server mijozlar bilan **bitta lokal tarmoqda** bo'lsa ishlaydi. VPS/bulutda bu ishlamaydi — mobil ilovaga server manzilini qo'lda kiritish kerak bo'ladi. |
-| 6 | ℹ️ | `BilimScanApplicationTests` Mongo'siz o'tmaydi, shuning uchun build `-DskipTests` bilan qilinadi. |
-| 7 | ℹ️ | Repoda Windows qoldiqlari bor: `bilim-scan-service.exe` (18 MB), `*.log`, `bilim-scan-service.xml`, `uploads/profiles/*.jpg`. Linuxda kerak emas — repodan olib tashlab, `.gitignore` ga qo'shish tavsiya qilinadi. |
-
-Shu tuzatish commit qilinib, git'ga push qilinganidan keyin deployni boshlang.
+> `<...>` ichidagi qiymatlarni o'zingiznikiga almashtiring.
 
 ---
 
-## 1. Serverga kirish va tizimni yangilash
+## 0. Deploydan oldin
+
+**Backend repo (`bilim_scan_server`)** — quyidagilar commit + push qilingan bo'lsin:
+- `spring.data.mongodb.uri` tuzatishi (oldin `spring.mongodb.uri` edi — Spring Boot 3 uni o'qimaydi, Windows serverda ilova parolsiz `test` bazasiga ulangan edi);
+- backup eksport/import funksiyasi (`/api/admin/backup/...`);
+- `CORS_ALLOWED_ORIGINS` va `DISCOVERY_ENABLED` sozlamalari.
+
+**Flutter repo (`bilim_scan`)** — `lib/core/config/app_config.dart` endi ilova turini build paytida oladi (`--dart-define=APP_TYPE=admin|student`), koddagi qatorni o'zgartirish shart emas. `ApiConfig.serverUrl` standart holatda `https://api.flashtest.uz`.
+
+**DNS** — domen panelida 4 ta **A** yozuv server IP'siga qaratilgan bo'lsin:
+
+| Host | Tur | Qiymat |
+|------|-----|--------|
+| `flashtest.uz` (`@`) | A | `<SERVER_IP>` |
+| `www` | A | `<SERVER_IP>` |
+| `admin` | A | `<SERVER_IP>` |
+| `api` | A | `<SERVER_IP>` |
+
+Tekshirish (kompyuteringizda): `dig +short api.flashtest.uz` → server IP chiqishi kerak. DNS tarqalmaguncha 10-qadamdagi SSL olinmaydi.
+
+---
+
+## 1. Tizimni tayyorlash
 
 ```bash
 ssh root@<SERVER_IP>
 
 apt update && apt upgrade -y
 timedatectl set-timezone Asia/Tashkent
-apt install -y curl git unzip ufw ca-certificates
+apt install -y curl git unzip rsync ufw ca-certificates nginx certbot python3-certbot-nginx \
+               openjdk-21-jdk-headless docker.io docker-compose-v2
+systemctl enable --now docker nginx
+java -version     # 21.x bo'lishi kerak
 ```
 
-## 2. Alohida foydalanuvchi yaratish (root bilan ishlamaslik uchun)
+## 2. Firewall
+
+Tashqariga faqat SSH, HTTP va HTTPS ochiladi. Backend (4257) va MongoDB (27017) faqat server ichida.
 
 ```bash
-# admin uchun sudo foydalanuvchi (ixtiyoriy, lekin tavsiya)
-adduser deploy
-usermod -aG sudo deploy
-
-# ilovani ishga tushiradigan tizim foydalanuvchisi (login qila olmaydi)
-useradd --system --create-home --home-dir /opt/bilim-scan --shell /usr/sbin/nologin bilimscan
+ufw allow OpenSSH
+ufw allow 'Nginx Full'     # 80 + 443
+ufw --force enable
+ufw status
 ```
 
-Keyingi qadamlarni `deploy` foydalanuvchisi bilan `sudo` orqali bajarish mumkin.
+## 3. MongoDB (Docker)
 
-## 3. Firewall (UFW)
-
-```bash
-sudo ufw allow OpenSSH
-```
-
-Keyin tanlovingizga qarab:
-
-**A variant — server lokal tarmoqda (maktab/ofis LAN), Nginx'siz:**
-```bash
-sudo ufw allow 4257/tcp     # API
-sudo ufw allow 8888/udp     # mobil ilova serverni avtomatik topishi uchun
-```
-
-**B variant — VPS / domen bilan, Nginx orqali:**
-```bash
-sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp
-# 4257 tashqariga OCHILMAYDI, Nginx ichkaridan murojaat qiladi
-```
+MongoDB'ning rasmiy apt repozitoriyasi Ubuntu 26.04 ni hali qo'llamasligi mumkin, shuning uchun Docker.
 
 ```bash
-sudo ufw enable
-sudo ufw status
-```
+openssl rand -hex 24      # natijani saqlab qo'ying → <MONGO_PASSWORD>
 
-> MongoDB porti (27017) hech qachon tashqariga ochilmaydi.
-
-## 4. Java 21 o'rnatish
-
-```bash
-sudo apt install -y openjdk-21-jdk-headless
-java -version   # 21.x chiqishi kerak
-```
-
-> Agar serverda bir nechta Java bo'lsa: `sudo update-alternatives --config java` bilan 21 ni tanlang.
-
-## 5. MongoDB (Docker orqali)
-
-MongoDB'ning rasmiy apt repozitoriyasi Ubuntu 26.04 ni hali qo'llab-quvvatlamasligi mumkin, shuning uchun Docker eng ishonchli yo'l.
-
-```bash
-sudo apt install -y docker.io docker-compose-v2
-sudo systemctl enable --now docker
-```
-
-Kuchli parol yarating va eslab qoling (keyingi qadamda kerak):
-
-```bash
-openssl rand -hex 24   # -> MONGO_PASSWORD
-```
-
-```bash
-sudo mkdir -p /opt/mongo
-sudo tee /opt/mongo/docker-compose.yml > /dev/null <<'EOF'
+mkdir -p /opt/mongo
+cat > /opt/mongo/docker-compose.yml <<'EOF'
 services:
   mongo:
     image: mongo:8.0
@@ -120,77 +88,71 @@ services:
 volumes:
   mongo-data:
 EOF
+chmod 600 /opt/mongo/docker-compose.yml
 
-sudo chmod 600 /opt/mongo/docker-compose.yml
-cd /opt/mongo && sudo docker compose up -d
-sudo docker ps    # mongo "Up" bo'lishi kerak
+cd /opt/mongo && docker compose up -d
+docker exec mongo mongosh -u dbadmin -p '<MONGO_PASSWORD>' --authenticationDatabase admin --quiet --eval 'db.runCommand({ping:1})'
+# { ok: 1 } chiqishi kerak
 ```
 
-Tekshirish:
-```bash
-sudo docker exec -it mongo mongosh -u dbadmin -p '<MONGO_PASSWORD>' --authenticationDatabase admin --eval 'db.runCommand({ping:1})'
-```
+> Port `127.0.0.1` ga bog'langan — Docker UFW'ni chetlab o'tsa ham tashqaridan kirib bo'lmaydi.
 
-## 6. Maxfiy sozlamalar (env fayl)
+## 4. Backend sozlamalari (env fayl)
 
 ```bash
-openssl rand -base64 48   # -> JWT_SECRET (kamida 32 belgi bo'lishi shart)
-```
+openssl rand -base64 48   # → <JWT_SECRET>
 
-```bash
-sudo mkdir -p /etc/bilim-scan
-sudo tee /etc/bilim-scan/bilim-scan.env > /dev/null <<'EOF'
+mkdir -p /etc/bilim-scan
+cat > /etc/bilim-scan/bilim-scan.env <<'EOF'
+SERVER_ADDRESS=127.0.0.1
 SERVER_PORT=4257
 SPRING_DATA_MONGODB_URI=mongodb://dbadmin:<MONGO_PASSWORD>@127.0.0.1:27017/bilim_scan?authSource=admin
 JWT_SECRET=<JWT_SECRET>
 JWT_EXPIRATION_MS=10800000
+CORS_ALLOWED_ORIGINS=https://flashtest.uz,https://www.flashtest.uz,https://admin.flashtest.uz
+DISCOVERY_ENABLED=false
+MAX_UPLOAD_SIZE=500MB
 BOOTSTRAP_ADMIN_ENABLED=true
 BOOTSTRAP_ADMIN_USERNAME=admin
 BOOTSTRAP_ADMIN_PASSWORD=<KUCHLI_ADMIN_PAROLI>
 EOF
-
-sudo chown root:bilimscan /etc/bilim-scan/bilim-scan.env
-sudo chmod 640 /etc/bilim-scan/bilim-scan.env
+chmod 600 /etc/bilim-scan/bilim-scan.env
 ```
 
-> Mongo parolida `@ : / ? #` kabi belgilar bo'lsa, URI'da URL-encode qilish kerak. `openssl rand -hex` faqat harf-raqam beradi — muammo bo'lmaydi.
+| O'zgaruvchi | Vazifasi |
+|-------------|----------|
+| `SERVER_ADDRESS=127.0.0.1` | Backend faqat Nginx orqali ochiladi |
+| `CORS_ALLOWED_ORIGINS` | Faqat shu saytlardan API'ga so'rov ruxsat etiladi |
+| `DISCOVERY_ENABLED=false` | LAN uchun UDP 8888 qidiruv o'chiriladi (domen bilan kerak emas) |
+| `MAX_UPLOAD_SIZE` | Backup import fayli uchun limit (profil rasmi baribir 5MB) |
+| `BOOTSTRAP_ADMIN_*` | Bo'sh bazada birinchi ADMIN'ni yaratadi; keyin `false` qilinadi |
 
-## 7. Kodni olish va build qilish
+## 5. Backend'ni build qilish
 
 ```bash
-sudo mkdir -p /opt/bilim-scan/src
-sudo chown -R deploy:deploy /opt/bilim-scan/src
-git clone <GIT_REPO_URL> /opt/bilim-scan/src
+git clone <BACKEND_GIT_URL> /opt/bilim-scan/src
 cd /opt/bilim-scan/src
-
 chmod +x mvnw
 ./mvnw -B clean package -DskipTests
-ls -lh target/*.jar   # bilim_scan-0.0.1-SNAPSHOT.jar
+
+cp target/bilim_scan-0.0.1-SNAPSHOT.jar /opt/bilim-scan/app.jar
+mkdir -p /opt/bilim-scan/uploads/profiles /opt/bilim-scan/backups
 ```
 
-JAR'ni ishlash joyiga ko'chirish va papkalarni tayyorlash:
+> Private repo bo'lsa: `ssh-keygen -t ed25519 -N '' -f ~/.ssh/id_ed25519 && cat ~/.ssh/id_ed25519.pub` — kalitni GitHub → repo → Settings → Deploy keys'ga qo'shing va `git@github.com:...` manzil bilan clone qiling.
+> `-DskipTests` — test Mongo'siz o'tmaydi.
+
+## 6. systemd servisi
 
 ```bash
-sudo cp target/bilim_scan-0.0.1-SNAPSHOT.jar /opt/bilim-scan/app.jar
-sudo mkdir -p /opt/bilim-scan/uploads/profiles
-sudo chown -R bilimscan:bilimscan /opt/bilim-scan/app.jar /opt/bilim-scan/uploads
-```
-
-> Private repo bo'lsa: serverda `ssh-keygen -t ed25519`, public kalitni GitHub → Deploy keys'ga qo'shing va `git@github.com:...` manzil bilan clone qiling.
-
-## 8. systemd servisi
-
-```bash
-sudo tee /etc/systemd/system/bilim-scan.service > /dev/null <<'EOF'
+cat > /etc/systemd/system/bilim-scan.service <<'EOF'
 [Unit]
-Description=Bilim Scan Spring Boot server
+Description=FlashTest (Bilim Scan) backend
 After=network-online.target docker.service
 Wants=network-online.target
 Requires=docker.service
 
 [Service]
-User=bilimscan
-Group=bilimscan
 WorkingDirectory=/opt/bilim-scan
 EnvironmentFile=/etc/bilim-scan/bilim-scan.env
 ExecStart=/usr/bin/java -Xms256m -Xmx512m -jar /opt/bilim-scan/app.jar
@@ -202,52 +164,78 @@ RestartSec=10
 WantedBy=multi-user.target
 EOF
 
-sudo systemctl daemon-reload
-sudo systemctl enable --now bilim-scan
-sudo systemctl status bilim-scan
+systemctl daemon-reload
+systemctl enable --now bilim-scan
+journalctl -u bilim-scan -f       # Ctrl+C bilan chiqiladi
 ```
 
-Loglarni ko'rish:
+Kutilgan qatorlar: `Tomcat started on port 4257` va `Bootstrap orqali ADMIN foydalanuvchi yaratildi: admin`.
+
+> `WorkingDirectory` muhim: `uploads/` va `backups/` papkalari shunga nisbatan topiladi.
+> `-Xmx512m` — RAM 1 GB bo'lsa `384m`, 4 GB+ bo'lsa `1g` qiling.
+
+Lokal tekshirish:
 ```bash
-sudo journalctl -u bilim-scan -f
-```
-
-Kutilgan qatorlar:
-- `Tomcat started on port 4257`
-- `Bootstrap orqali ADMIN foydalanuvchi yaratildi: admin`
-- `UDP Kashf qilish (Discovery) xizmati 8888-portda ishga tushdi...`
-
-> `-Xmx512m` — server RAM'iga qarab o'zgartiring (1 GB RAM bo'lsa 384m, 4 GB bo'lsa 1g).
-
-## 9. Ishlashini tekshirish
-
-```bash
-curl -i -X POST http://127.0.0.1:4257/api/auth/login \
-  -H 'Content-Type: application/json' \
+curl -s -X POST http://127.0.0.1:4257/api/auth/login -H 'Content-Type: application/json' \
   -d '{"username":"admin","password":"<KUCHLI_ADMIN_PAROLI>"}'
+# {"token":"eyJ..."} qaytishi kerak
 ```
 
-Javobda token qaytsa — hammasi joyida.
+## 7. Saytlar uchun papkalar
 
-**Admin yaratilgandan keyin bootstrap'ni o'chiring:**
 ```bash
-sudo sed -i 's/^BOOTSTRAP_ADMIN_ENABLED=.*/BOOTSTRAP_ADMIN_ENABLED=false/' /etc/bilim-scan/bilim-scan.env
-sudo systemctl restart bilim-scan
+mkdir -p /var/www/flashtest.uz /var/www/admin.flashtest.uz
+echo 'tayyorlanmoqda' > /var/www/flashtest.uz/index.html
+echo 'tayyorlanmoqda' > /var/www/admin.flashtest.uz/index.html
 ```
 
-## 10. (B variant) Nginx + HTTPS
-
-Domen A-yozuvi server IP'siga yo'naltirilgan bo'lishi kerak.
+## 8. Nginx
 
 ```bash
-sudo apt install -y nginx certbot python3-certbot-nginx
+# Flutter web uchun umumiy sozlamalar (ikkala saytda ishlatiladi)
+cat > /etc/nginx/snippets/flutter-web.conf <<'EOF'
+index index.html;
 
-sudo tee /etc/nginx/sites-available/bilim-scan > /dev/null <<'EOF'
+# Flutter fayl nomlari hash'lanmagan (main.dart.js va h.k.) — brauzer har safar
+# ETag orqali tekshiradi, o'zgarmagan bo'lsa 304 qaytadi. Yangi versiya darhol ko'rinadi.
+add_header Cache-Control "no-cache" always;
+
+gzip on;
+gzip_types text/plain text/css application/javascript application/json application/wasm image/svg+xml;
+gzip_min_length 1024;
+
+location / {
+    try_files $uri $uri/ /index.html;
+}
+EOF
+
+# Kursant sayti
+cat > /etc/nginx/sites-available/flashtest.uz <<'EOF'
 server {
     listen 80;
-    server_name <DOMEN>;
+    server_name flashtest.uz www.flashtest.uz;
+    root /var/www/flashtest.uz;
+    include snippets/flutter-web.conf;
+}
+EOF
 
-    client_max_body_size 500M;   # backup import uchun (profil rasmi baribir 5MB bilan cheklangan)
+# Admin / o'qituvchi sayti
+cat > /etc/nginx/sites-available/admin.flashtest.uz <<'EOF'
+server {
+    listen 80;
+    server_name admin.flashtest.uz;
+    root /var/www/admin.flashtest.uz;
+    include snippets/flutter-web.conf;
+}
+EOF
+
+# Backend API
+cat > /etc/nginx/sites-available/api.flashtest.uz <<'EOF'
+server {
+    listen 80;
+    server_name api.flashtest.uz;
+
+    client_max_body_size 500M;      # backup import uchun (MAX_UPLOAD_SIZE bilan bir xil)
     proxy_request_buffering off;
 
     location / {
@@ -256,96 +244,141 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 300s;   # katta backup eksport/import uchun
+        proxy_read_timeout 300s;
+        proxy_send_timeout 300s;
     }
 }
 EOF
 
-sudo ln -s /etc/nginx/sites-available/bilim-scan /etc/nginx/sites-enabled/
-sudo rm -f /etc/nginx/sites-enabled/default
-sudo nginx -t && sudo systemctl reload nginx
+ln -sf /etc/nginx/sites-available/flashtest.uz       /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/admin.flashtest.uz /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/api.flashtest.uz   /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
 
-sudo certbot --nginx -d <DOMEN> --redirect -m <EMAIL> --agree-tos -n
+nginx -t && systemctl reload nginx
 ```
 
-Tekshirish: `curl -i https://<DOMEN>/api/auth/login -X POST -H 'Content-Type: application/json' -d '{}'`
+> API'da butun `/` proxy qilinadi — shunda `/api/...` ham, profil rasmlari `/uploads/profiles/...` ham ishlaydi (Flutter `ApiConfig.getFileUrl` rasmni `https://api.flashtest.uz/uploads/...` dan oladi).
 
-Nginx bilan ilovani faqat lokalga bog'lash uchun env faylga qo'shing (ixtiyoriy, qo'shimcha himoya):
+## 9. HTTPS (Let's Encrypt)
+
 ```bash
-echo 'SERVER_ADDRESS=127.0.0.1' | sudo tee -a /etc/bilim-scan/bilim-scan.env
-sudo systemctl restart bilim-scan
+certbot --nginx --redirect --agree-tos -m <EMAIL> -n \
+  -d flashtest.uz -d www.flashtest.uz -d admin.flashtest.uz -d api.flashtest.uz
+
+systemctl list-timers | grep certbot     # avtomatik yangilanish yoqilganini tekshirish
+certbot renew --dry-run
 ```
 
-## 11. (Ixtiyoriy) Eski Windows serverdan ma'lumotlarni ko'chirish
-
-> Kelajakda serverlar orasida ko'chirish uchun 12-bo'limdagi eksport/import funksiyasidan foydalaning. Quyidagi usul faqat **hozirgi** Windows server uchun, chunki unda yangi versiya hali o'rnatilmagan va ma'lumotlar `test` bazasida turibdi.
-
-Eski serverda ma'lumot **`test`** bazasida (0-bo'limning 1-bandiga qarang).
-
-**Windows'da** (MongoDB Database Tools o'rnatilgan bo'lishi kerak):
-```powershell
-mongodump --uri="mongodb://localhost:27017/test" --archive=bilim_scan.archive --gzip
+Tekshirish:
+```bash
+curl -I https://flashtest.uz
+curl -I https://admin.flashtest.uz
+curl -s -X POST https://api.flashtest.uz/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"<KUCHLI_ADMIN_PAROLI>"}'
 ```
 
-Arxivni va rasmlarni serverga yuborish:
+Admin yaratilganidan keyin bootstrap'ni o'chiring:
+```bash
+sed -i 's/^BOOTSTRAP_ADMIN_ENABLED=.*/BOOTSTRAP_ADMIN_ENABLED=false/' /etc/bilim-scan/bilim-scan.env
+systemctl restart bilim-scan
+```
+
+## 10. Flutter web'ni build qilib yuklash (Mac'da)
+
+Mac'dagi terminalda, `/Users/uzmacbook/AndroidStudioProjects/bilim_scan` papkasida:
+
+```bash
+cd ~/AndroidStudioProjects/bilim_scan
+flutter pub get
+
+# 1) Kursant sayti → https://flashtest.uz
+flutter build web --release \
+  --dart-define=APP_TYPE=student \
+  --dart-define=SERVER_URL=https://api.flashtest.uz \
+  -o build/web_user
+
+# 2) Admin / o'qituvchi sayti → https://admin.flashtest.uz
+flutter build web --release \
+  --dart-define=APP_TYPE=admin \
+  --dart-define=SERVER_URL=https://api.flashtest.uz \
+  -o build/web_admin
+
+# 3) Serverga yuklash (--delete eski fayllarni o'chiradi)
+rsync -az --delete build/web_user/  root@<SERVER_IP>:/var/www/flashtest.uz/
+rsync -az --delete build/web_admin/ root@<SERVER_IP>:/var/www/admin.flashtest.uz/
+```
+
+> `-o` bilan har biri alohida papkaga build qilinadi, bir-birini ustidan yozmaydi.
+> Oxiridagi `/` muhim: `build/web_user/` — papkaning **ichidagi** fayllar yuklanadi.
+> Saytlar domen ildizida turgani uchun `--base-href` berish shart emas (standart `/`).
+
+Har safar frontend o'zgarganda faqat shu 10-qadamni takrorlaysiz. Brauzerda eski versiya qolsa — `Ctrl+Shift+R`.
+
+Qulaylik uchun Flutter loyiha ichida `deploy_web.sh` qilib saqlab qo'yish mumkin:
+```bash
+#!/bin/bash
+set -e
+SERVER=root@<SERVER_IP>
+API=https://api.flashtest.uz
+flutter build web --release --dart-define=APP_TYPE=student --dart-define=SERVER_URL=$API -o build/web_user
+flutter build web --release --dart-define=APP_TYPE=admin   --dart-define=SERVER_URL=$API -o build/web_admin
+rsync -az --delete build/web_user/  $SERVER:/var/www/flashtest.uz/
+rsync -az --delete build/web_admin/ $SERVER:/var/www/admin.flashtest.uz/
+echo "Tayyor: https://flashtest.uz va https://admin.flashtest.uz"
+```
+
+## 11. Bazani eksport / import qilish (ilova ichidan)
+
+ADMIN uchun ikkita endpoint. Butun baza (barcha kolleksiyalar) va profil rasmlari **bitta `.zip`** ga tushadi. Shu faylni istalgan serverga yuklasangiz, tizim aynan o'sha holatdan davom etadi.
+
+| Amal | So'rov |
+|------|--------|
+| Eksport | `GET https://api.flashtest.uz/api/admin/backup/export` → `bilim_scan_backup_YYYY-MM-DD_HHmmss.zip` |
+| Import | `POST https://api.flashtest.uz/api/admin/backup/import`, `multipart/form-data`, maydon: `file` |
+
+```bash
+TOKEN=$(curl -s -X POST https://api.flashtest.uz/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"username":"admin","password":"<PAROL>"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
+
+curl -OJ -H "Authorization: Bearer $TOKEN" https://api.flashtest.uz/api/admin/backup/export
+curl -H "Authorization: Bearer $TOKEN" -F file=@bilim_scan_backup_....zip https://api.flashtest.uz/api/admin/backup/import
+```
+
+- **Import hozirgi bazani to'liq almashtiradi** (rasmlar ham).
+- Import oldidan hozirgi holat avtomatik `/opt/bilim-scan/backups/pre_import_*.zip` ga saqlanadi — xato bo'lsa shuni qayta import qilasiz.
+- Buzilgan yoki begona fayl → `400` va sababi, bazaga tegilmaydi.
+- Import'dan keyin login/parollar backup'dagidek bo'ladi. Serverlarda `JWT_SECRET` farqli bo'lsa, hamma qayta login qiladi.
+- Imtihon ketayotgan paytda import qilmang.
+
+## 12. (Ixtiyoriy) Eski Windows serverdan ko'chirish
+
+Eski serverda yangi versiya o'rnatilmagan va ma'lumot **`test`** bazasida turibdi, shuning uchun bu safar `mongodump` bilan:
+
+**Windows'da** (MongoDB Database Tools kerak):
 ```powershell
-scp bilim_scan.archive deploy@<SERVER_IP>:/tmp/
-scp -r C:\Users\UltraPC\IdeaProjects\bilim_scan_server\uploads\profiles deploy@<SERVER_IP>:/tmp/
+mongodump --uri="mongodb://localhost:27017/test" --archive=old.archive --gzip
+scp old.archive root@<SERVER_IP>:/tmp/
+scp -r C:\Users\UltraPC\IdeaProjects\bilim_scan_server\uploads\profiles root@<SERVER_IP>:/tmp/
 ```
 
 **Serverda:**
 ```bash
-sudo systemctl stop bilim-scan
-
-sudo docker cp /tmp/bilim_scan.archive mongo:/tmp/
-sudo docker exec mongo mongorestore \
-  -u dbadmin -p '<MONGO_PASSWORD>' --authenticationDatabase admin \
-  --archive=/tmp/bilim_scan.archive --gzip \
-  --nsFrom='test.*' --nsTo='bilim_scan.*' --drop
-
-sudo cp -r /tmp/profiles/* /opt/bilim-scan/uploads/profiles/
-sudo chown -R bilimscan:bilimscan /opt/bilim-scan/uploads
-
-sudo systemctl start bilim-scan
+systemctl stop bilim-scan
+docker cp /tmp/old.archive mongo:/tmp/
+docker exec mongo mongorestore -u dbadmin -p '<MONGO_PASSWORD>' --authenticationDatabase admin \
+  --archive=/tmp/old.archive --gzip --nsFrom='test.*' --nsTo='bilim_scan.*' --drop
+cp -r /tmp/profiles/* /opt/bilim-scan/uploads/profiles/
+systemctl start bilim-scan
 ```
 
-> Ko'chirilgan bazada ADMIN allaqachon bor bo'ladi — bootstrap uni qayta yaratmaydi, eski admin paroli ishlaydi.
+Keyingi safarlar uchun 11-bo'limdagi eksport/import'dan foydalaning.
 
-## 12. Bazani eksport / import qilish (ilova ichidan)
-
-Ilovada ADMIN uchun ikkita endpoint bor. Ular butun bazani (barcha kolleksiyalar) va profil rasmlarini **bitta `.zip` faylga** joylaydi. Shu faylni boshqa istalgan serverga yuklasangiz, tizim aynan o'sha holatdan davom etadi.
-
-| Amal | So'rov |
-|------|--------|
-| Eksport (yuklab olish) | `GET /api/admin/backup/export` → `bilim_scan_backup_YYYY-MM-DD_HHmmss.zip` |
-| Import (tiklash) | `POST /api/admin/backup/import`, `multipart/form-data`, maydon nomi: `file` |
+## 13. Avtomatik kunlik zaxira
 
 ```bash
-# token olish
-TOKEN=$(curl -s -X POST https://<DOMEN>/api/auth/login -H 'Content-Type: application/json' \
-  -d '{"username":"admin","password":"<PAROL>"}' | python3 -c 'import sys,json;print(json.load(sys.stdin)["token"])')
-
-# eksport
-curl -OJ -H "Authorization: Bearer $TOKEN" https://<DOMEN>/api/admin/backup/export
-
-# boshqa serverga import
-curl -H "Authorization: Bearer $TOKEN" -F file=@bilim_scan_backup_2026-11-14_174356.zip \
-  https://<YANGI_SERVER>/api/admin/backup/import
-```
-
-Bilish kerak bo'lgan narsalar:
-- **Import hozirgi bazani to'liq almashtiradi** (backup'da yo'q kolleksiyalar ham tozalanadi, rasmlar ham almashtiriladi).
-- Import boshlanishidan oldin hozirgi holat avtomatik `/opt/bilim-scan/backups/pre_import_*.zip` ga saqlanadi. Xato fayl yuklansangiz, o'sha faylni qayta import qilib orqaga qaytasiz.
-- Fayl avval to'liq tekshiriladi. Buzilgan yoki begona fayl bo'lsa `400` qaytadi va bazaga tegilmaydi.
-- Import'dan keyin foydalanuvchilar backup'dagi login/parollari bilan kiradi. Serverlar orasida `JWT_SECRET` farq qilsa, hamma qayta login qiladi.
-- Import paytida boshqa foydalanuvchilar ishlamayotgan bo'lgani ma'qul (masalan, imtihon vaqtida qilmang).
-- Maksimal fayl hajmi standart holatda 500MB. O'zgartirish uchun env faylga `MAX_UPLOAD_SIZE=1GB` qo'shing (Nginx'dagi `client_max_body_size` ni ham).
-
-## 13. Avtomatik zaxira nusxa (cron)
-
-```bash
-sudo mkdir -p /var/backups/bilim-scan
-sudo tee /usr/local/bin/bilim-scan-backup > /dev/null <<'EOF'
+mkdir -p /var/backups/bilim-scan
+cat > /usr/local/bin/bilim-scan-backup <<'EOF'
 #!/bin/bash
 set -e
 source /etc/bilim-scan/bilim-scan.env
@@ -355,53 +388,49 @@ docker exec mongo mongodump --uri="$SPRING_DATA_MONGODB_URI" --archive --gzip > 
 tar -czf "$DIR/uploads_$TS.tar.gz" -C /opt/bilim-scan uploads
 find "$DIR" -type f -mtime +14 -delete
 EOF
-sudo chmod 700 /usr/local/bin/bilim-scan-backup
+chmod 700 /usr/local/bin/bilim-scan-backup
+echo '0 3 * * * root /usr/local/bin/bilim-scan-backup' > /etc/cron.d/bilim-scan-backup
 
-# har kuni soat 03:00 da
-echo '0 3 * * * root /usr/local/bin/bilim-scan-backup' | sudo tee /etc/cron.d/bilim-scan-backup
+/usr/local/bin/bilim-scan-backup && ls -lh /var/backups/bilim-scan     # sinab ko'rish
 ```
 
-> `SPRING_DATA_MONGODB_URI` dagi `127.0.0.1` konteyner ichida ham Mongo'ning o'ziga ishora qiladi, shuning uchun skript to'g'ri ishlaydi. Backuplarni vaqti-vaqti bilan boshqa joyga ham ko'chirib turing.
+Har kuni 03:00 da ishlaydi, 14 kundan eskilari o'chiriladi. Vaqti-vaqti bilan boshqa joyga (kompyuterga) ko'chirib turing:
+`rsync -az root@<SERVER_IP>:/var/backups/bilim-scan/ ~/flashtest-backups/`
 
-## 14. Yangi versiyani chiqarish (update)
+## 14. Backend'ni yangilash
 
 ```bash
-cd /opt/bilim-scan/src
-git pull
-./mvnw -B clean package -DskipTests
-
-sudo cp /opt/bilim-scan/app.jar /opt/bilim-scan/app.jar.bak
-sudo cp target/bilim_scan-0.0.1-SNAPSHOT.jar /opt/bilim-scan/app.jar
-sudo chown bilimscan:bilimscan /opt/bilim-scan/app.jar
-sudo systemctl restart bilim-scan
-sudo journalctl -u bilim-scan -n 50 --no-pager
+cd /opt/bilim-scan/src && git pull && ./mvnw -B clean package -DskipTests \
+  && cp /opt/bilim-scan/app.jar /opt/bilim-scan/app.jar.bak \
+  && cp target/bilim_scan-0.0.1-SNAPSHOT.jar /opt/bilim-scan/app.jar \
+  && systemctl restart bilim-scan && journalctl -u bilim-scan -n 30 --no-pager
 ```
 
-Muammo chiqsa, orqaga qaytarish:
-```bash
-sudo cp /opt/bilim-scan/app.jar.bak /opt/bilim-scan/app.jar && sudo systemctl restart bilim-scan
-```
+Orqaga qaytarish: `cp /opt/bilim-scan/app.jar.bak /opt/bilim-scan/app.jar && systemctl restart bilim-scan`
 
 ## 15. Foydali buyruqlar
 
 | Vazifa | Buyruq |
 |--------|--------|
-| Servis holati | `sudo systemctl status bilim-scan` |
-| Qayta ishga tushirish | `sudo systemctl restart bilim-scan` |
-| Loglar (jonli) | `sudo journalctl -u bilim-scan -f` |
-| Mongo konsoli | `sudo docker exec -it mongo mongosh -u dbadmin -p --authenticationDatabase admin` |
-| Ilova ichidan backup | `curl -OJ -H "Authorization: Bearer $TOKEN" http://127.0.0.1:4257/api/admin/backup/export` |
-| Mongo loglari | `sudo docker logs -f mongo` |
-| Port band qilinganmi | `sudo ss -tulpn \| grep -E '4257\|8888\|27017'` |
+| Backend holati / qayta ishga tushirish | `systemctl status bilim-scan` / `systemctl restart bilim-scan` |
+| Backend loglari | `journalctl -u bilim-scan -f` |
+| Nginx loglari | `tail -f /var/log/nginx/error.log /var/log/nginx/access.log` |
+| Nginx sozlamasini tekshirish | `nginx -t && systemctl reload nginx` |
+| Mongo konsoli | `docker exec -it mongo mongosh -u dbadmin -p --authenticationDatabase admin bilim_scan` |
+| Portlar | `ss -tulpn \| grep -E ':80\|:443\|4257\|27017'` |
+| SSL muddati | `certbot certificates` |
 
 ## 16. Tez-tez uchraydigan xatolar
 
 | Belgi | Sabab / yechim |
 |-------|----------------|
-| `Command ... requires authentication` / `Unauthorized` | `SPRING_DATA_MONGODB_URI` noto'g'ri yoki parol mos emas. Env faylni tekshiring. |
-| `WeakKeyException` | `JWT_SECRET` 32 baytdan qisqa. Uzunroq qiling. |
-| `username band - admin` bilan ilova to'xtaydi | Bazada `admin` bor, lekin roli ADMIN emas. `BOOTSTRAP_ADMIN_USERNAME` ni o'zgartiring yoki bootstrap'ni o'chiring. |
-| Import'da `413 Request Entity Too Large` | Nginx `client_max_body_size` yoki `MAX_UPLOAD_SIZE` kichik. |
-| Rasm yuklanmaydi / 500 | `/opt/bilim-scan/uploads` egasi `bilimscan` emas → `chown -R bilimscan:bilimscan /opt/bilim-scan/uploads`. Nginx'da 413 bo'lsa → `client_max_body_size`. |
-| Mobil ilova serverni avtomatik topmaydi | Server boshqa tarmoqda (VPS) yoki `8888/udp` yopiq. Manzilni qo'lda kiriting yoki portni oching. |
-| `Port 4257 was already in use` | `sudo ss -tulpn \| grep 4257` bilan jarayonni toping. |
+| Saytda "XMLHttpRequest error" / CORS xatosi | Sayt manzili `CORS_ALLOWED_ORIGINS` da yo'q (masalan `www.` bilan kirilgan). Env'ga qo'shib `systemctl restart bilim-scan`. |
+| Sayt ochilmaydi, 502 Bad Gateway (api) | Backend ishlamayapti → `journalctl -u bilim-scan -n 100`. |
+| Sahifani yangilaganda 404 | `try_files ... /index.html` yo'q → `snippets/flutter-web.conf` ulanganini tekshiring. |
+| Saytda eski versiya ko'rinadi | `Ctrl+Shift+R`; rsync'da manzil to'g'riligini tekshiring. |
+| Admin saytida kursant login oynasi chiqadi (yoki aksincha) | Build'da `APP_TYPE` adashgan yoki papkalar almashgan (10-qadam). |
+| Rasmlar ko'rinmaydi | `https://api.flashtest.uz/uploads/profiles/<fayl>` ochilishini tekshiring; fayl `/opt/bilim-scan/uploads/profiles` da bo'lishi kerak. |
+| `certbot` xatosi | DNS hali server IP'ga qaramayapti (`dig +short <domen>`), yoki 80-port yopiq. |
+| `Unauthorized` / Mongo auth xatosi | `SPRING_DATA_MONGODB_URI` dagi parol `docker-compose.yml` dagi bilan bir xil emas. |
+| `WeakKeyException` | `JWT_SECRET` 32 belgidan qisqa. |
+| Import'da `413` | Nginx `client_max_body_size` yoki `MAX_UPLOAD_SIZE` kichik. |
