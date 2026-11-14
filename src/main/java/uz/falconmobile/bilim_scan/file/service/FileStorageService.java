@@ -1,7 +1,10 @@
 package uz.falconmobile.bilim_scan.file.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.util.unit.DataSize;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.*;
@@ -13,7 +16,14 @@ public class FileStorageService {
     @Value("${file.upload-dir}")
     private String uploadDir;
 
+    @Value("${file.max-image-size:5MB}")
+    private DataSize maxImageSize;
+
     public String saveProfileImage(MultipartFile file) {
+        if (file.getSize() > maxImageSize.toBytes()) {
+            throw new ResponseStatusException(HttpStatus.PAYLOAD_TOO_LARGE,
+                    "Rasm hajmi " + maxImageSize.toMegabytes() + "MB dan oshmasligi kerak");
+        }
         try {
             Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
