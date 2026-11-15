@@ -194,6 +194,10 @@ write_site() { # $1=fayl nomi, keyin config matni stdin'dan. Mavjud bo'lsa tegil
 
 setup_nginx() {
     mkdir -p "$WWW_USER" "$WWW_ADMIN"
+    # Uzun domen nomlari (admin.flashtest.uz) uchun standart 32 yetmaydi
+    if ! grep -Eq '^\s*server_names_hash_bucket_size' /etc/nginx/nginx.conf; then
+        echo 'server_names_hash_bucket_size 64;' > /etc/nginx/conf.d/server-names-hash.conf
+    fi
     cat > /etc/nginx/snippets/flutter-web.conf <<'EOF'
 index index.html;
 # Flutter fayl nomlari hash'lanmagan — brauzer har safar ETag bilan tekshiradi (o'zgarmagan bo'lsa 304)
