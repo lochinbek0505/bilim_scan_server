@@ -482,5 +482,5 @@ Orqaga qaytarish: `cp /opt/bilim-scan/app.jar.bak /opt/bilim-scan/app.jar && sys
 | `Unauthorized` / Mongo auth xatosi | `SPRING_DATA_MONGODB_URI` dagi parol `docker-compose.yml` dagi bilan bir xil emas. |
 | `WeakKeyException` | `JWT_SECRET` 32 belgidan qisqa. |
 | Import'da `413` | Nginx `client_max_body_size` yoki `MAX_UPLOAD_SIZE` kichik. |
-| `MongoDB ishga tushmadi`, `docker logs mongo` da `AVX` haqida xato | VPS protsessorida AVX yo'q — MongoDB 5+ ishlamaydi. `mongo:4.4` image'ini ishlating yoki VPS provayderidan AVX'li tarif so'rang. |
+| `Illegal instruction`, `MongoDB 5.0+ requires a CPU with AVX` | VPS protsessorida AVX yo'q. `deploy.sh` buni o'zi aniqlab **MongoDB 4.4** ishlatadi (ishlamay qolgan 5+ konteynerni o'chirib qayta yaratadi). Qo'lda o'rnatsangiz 3-qadamda `mongo:4.4` yozing va `mongosh` o'rniga `mongo` buyrug'ini ishlating. |
 | `deploy.sh` da `git pull` xatosi | Serverdagi papkada lokal o'zgarish bor. `git -C <papka> status` bilan ko'ring yoki `./deploy.sh --no-pull`. |

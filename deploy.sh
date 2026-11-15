@@ -113,26 +113,52 @@ EOF
 
 env_get() { grep -E "^$1=" "$ENV_FILE" | head -1 | cut -d= -f2-; }
 
+mongo_shell() { # 4.4 image'da faqat "mongo", 5+ da "mongosh" bor
+    if docker exec mongo sh -c 'command -v mongosh' &>/dev/null; then echo mongosh; else echo mongo; fi
+}
+
 setup_mongo() {
     [[ -n "$(env_get MONGO_PASSWORD)" ]] || die "$ENV_FILE ichida MONGO_PASSWORD yo'q"
+
+    # MongoDB 5.0+ protsessorda AVX talab qiladi. AVX bo'lmasa 4.4 ishlatiladi.
+    local image="mongo:8.0"
+    if ! grep -qw avx /proc/cpuinfo; then
+        image="mongo:4.4"
+        warn "Protsessorda AVX yo'q — MongoDB 4.4 ishlatiladi"
+    fi
+
     if docker ps -a --format '{{.Names}}' | grep -qx mongo; then
-        docker start mongo >/dev/null
-    else
-        step "MongoDB konteyneri yaratilmoqda"
+        local current
+        current=$(docker inspect -f '{{.Config.Image}}' mongo)
+        if [[ "$current" != "$image" && "$image" == "mongo:4.4" ]]; then
+            # AVX'siz serverda 5+ versiya hech qachon ishga tushmagan — unda ma'lumot yo'q
+            step "Ishlamaydigan $current konteyneri o'chirilib, $image bilan qayta yaratilmoqda"
+            docker rm -f mongo >/dev/null
+            docker volume rm mongo-data >/dev/null 2>&1 || true
+        else
+            docker start mongo >/dev/null
+        fi
+    fi
+
+    if ! docker ps -a --format '{{.Names}}' | grep -qx mongo; then
+        step "MongoDB konteyneri yaratilmoqda ($image)"
         docker run -d --name mongo --restart unless-stopped \
             -p 127.0.0.1:27017:27017 \
             -v mongo-data:/data/db \
             -e MONGO_INITDB_ROOT_USERNAME=dbadmin \
             -e MONGO_INITDB_ROOT_PASSWORD="$(env_get MONGO_PASSWORD)" \
-            mongo:8.0 >/dev/null
+            "$image" >/dev/null
     fi
-    local i
+
+    local i shell
     for i in $(seq 1 30); do
-        docker exec mongo mongosh --quiet -u dbadmin -p "$(env_get MONGO_PASSWORD)" \
+        shell=$(mongo_shell)
+        docker exec mongo "$shell" --quiet -u dbadmin -p "$(env_get MONGO_PASSWORD)" \
             --authenticationDatabase admin --eval 'db.runCommand({ping:1}).ok' &>/dev/null && return
         sleep 2
     done
-    die "MongoDB ishga tushmadi: docker logs mongo"
+    docker logs --tail 20 mongo || true
+    die "MongoDB ishga tushmadi (yuqoridagi log)"
 }
 
 setup_service() {
